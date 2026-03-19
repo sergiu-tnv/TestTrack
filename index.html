@@ -1,0 +1,1116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>TestTrack</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Segoe UI',Arial,sans-serif;background:#f4f5f7;min-height:100vh}
+button{cursor:pointer}pre{font-family:inherit}select{cursor:pointer}
+.topbar{background:#1e2a3a;color:#fff;padding:0 20px;display:flex;align-items:center;gap:12px;height:48px;box-shadow:0 2px 8px rgba(0,0,0,.25)}
+.logo{font-weight:800;font-size:18px;color:#4fc3f7;letter-spacing:1px;white-space:nowrap}
+.tabs{background:#253347;display:flex;padding-left:16px}
+.tab{background:transparent;color:#adb5bd;border:none;padding:10px 18px;font-size:13px;border-radius:4px 4px 0 0;transition:all .15s}
+.tab.active{background:#f4f5f7;color:#1e2a3a;font-weight:700}
+.sidebar{width:230px;background:#fff;border-right:1px solid #dde1e7;padding:12px 0;min-height:calc(100vh - 96px)}
+.suite-item{padding:8px 12px;cursor:pointer;border-left:3px solid transparent;display:flex;align-items:center;justify-content:space-between}
+.suite-item.active{background:#e8f0fe;border-left-color:#1a73e8}
+.suite-item:hover:not(.active){background:#f8f9fa}
+.main{flex:1;padding:20px;min-width:0;overflow:auto}
+.btn{border:none;border-radius:5px;padding:7px 14px;font-weight:600;font-size:12px}
+.btn-primary{background:#1a73e8;color:#fff}
+.btn-success{background:#fff;color:#27ae60;border:1px solid #27ae60}
+.btn-info{background:#fff;color:#1a73e8;border:1px solid #1a73e8}
+.btn-secondary{background:#fff;color:#666;border:1px solid #ccc}
+.btn-danger{background:#fdecea;color:#c0392b;border:none}
+.btn-sm{padding:3px 7px;font-size:11px;border-radius:3px}
+#save-btn{display:flex;align-items:center;gap:6px;border:none;border-radius:6px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;transition:all .2s;white-space:nowrap}
+#save-btn.idle  {background:#253347;color:#6b7a8d;cursor:default}
+#save-btn.dirty {background:#f59e0b;color:#fff;box-shadow:0 0 0 2px rgba(245,158,11,.4);animation:savepulse 1.5s infinite}
+#save-btn.saving{background:#3b82f6;color:#fff;cursor:wait}
+#save-btn.saved {background:#22c55e;color:#fff}
+#save-btn.error {background:#ef4444;color:#fff}
+@keyframes savepulse{0%,100%{box-shadow:0 0 0 2px rgba(245,158,11,.4)}50%{box-shadow:0 0 0 5px rgba(245,158,11,.1)}}
+table{width:100%;border-collapse:collapse}
+th{padding:9px 10px;text-align:left;font-size:10px;font-weight:700;color:#495057;text-transform:uppercase;letter-spacing:.5px}
+td{padding:7px 10px;border-bottom:1px solid #eee;font-size:13px}
+tr.even{background:#fff}tr.odd{background:#fafbfc}tr.sel-row{background:#ebf3fd!important}
+tr:hover td{background:#f0f4ff}
+.badge{border-radius:4px;padding:2px 8px;font-size:11px;font-weight:600;display:inline-block}
+.chip{padding:2px 5px;border-radius:3px;font-size:11px;display:inline-block}
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;z-index:998}
+.modal{background:#fff;border-radius:10px;padding:28px;box-shadow:0 8px 40px rgba(0,0,0,.18);max-height:92vh;overflow-y:auto}
+.form-label{font-size:12px;font-weight:600;color:#555;display:block;margin-bottom:4px}
+.form-input{width:100%;border:1px solid #dde1e7;border-radius:5px;padding:7px 10px;font-size:13px;font-family:inherit}
+.form-input:focus{outline:none;border-color:#1a73e8}
+.progress-bar{background:#eee;border-radius:10px;height:8px;overflow:hidden}
+.progress-fill{height:100%;transition:width .3s}
+.hint{background:#fffbea;border:1px solid #ffc107;border-radius:6px;padding:7px 12px;font-size:11px;color:#856404;margin-bottom:12px}
+.bulk-bar{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1e2a3a;color:#fff;border-radius:12px;padding:12px 20px;display:flex;gap:10px;align-items:center;box-shadow:0 4px 24px rgba(0,0,0,.3);z-index:200;flex-wrap:wrap}
+.spinner{display:inline-block;width:32px;height:32px;border:3px solid #4fc3f7;border-top-color:transparent;border-radius:50%;animation:spin .6s linear infinite}
+.mode-btn{flex:1;padding:10px 6px;border:2px solid #dde1e7;border-radius:8px;cursor:pointer;background:#fff;color:#555;font-size:12px;text-align:center;transition:all .15s}
+.mode-btn.active{border-color:#1a73e8;background:#e8f0fe;color:#1a73e8;font-weight:700}
+.case-picker-row{display:flex;align-items:center;gap:10px;padding:9px 14px;cursor:pointer;border-bottom:1px solid #f0f0f0;transition:background .1s}
+.case-picker-row:hover,.case-picker-row.picked{background:#e8f0fe}
+th.sortable{cursor:pointer;user-select:none;white-space:nowrap}
+th.sortable:hover{background:#e2e8f0!important}
+.sort-arrow{margin-left:3px;font-size:9px;color:#1a73e8;font-weight:900}
+.att-chip{background:#e8f0fe;color:#1a73e8;border-radius:10px;padding:1px 6px;font-size:10px;font-weight:700;cursor:pointer;margin-left:4px;vertical-align:middle;border:none;display:inline-block}
+.att-chip:hover{background:#c5d9f7}
+.att-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:6px;border:1px solid #eee;margin-bottom:6px;background:#fff;transition:background .1s}
+.att-item:hover{background:#f0f4ff;border-color:#93b4fb}
+.drop-zone{border:2px dashed #dde1e7;border-radius:8px;padding:22px 16px;text-align:center;cursor:pointer;transition:all .15s;margin-top:10px}
+.drop-zone:hover,.drop-zone.dz-over{border-color:#1a73e8;background:#e8f0fe}
+.field-error{color:#c0392b;font-size:11px;margin-top:3px;display:none}
+.field-error.visible{display:block}
+.upload-progress{background:#e8f0fe;border-radius:6px;padding:8px 12px;font-size:12px;color:#1a73e8;margin-top:8px;display:none}
+.upload-progress.visible{display:block}
+/* ── Move modal suite card ── */
+.move-suite-card{display:flex;align-items:center;gap:14px;padding:13px 16px;cursor:pointer;border-bottom:1px solid #f0f0f0;transition:background .12s}
+.move-suite-card:last-child{border-bottom:none}
+.move-suite-card:hover{background:#f0f4ff}
+.move-suite-card input[type=radio]{width:16px;height:16px;accent-color:#1a73e8;cursor:pointer;flex-shrink:0}
+.move-suite-card.selected{background:#e8f0fe}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="topbar">
+    <div class="logo">🧪 TestTrack</div>
+    <div style="flex:1"></div>
+    <button id="save-btn" class="idle" onclick="saveNow()" title="Save all changes to Google Sheets">
+      <span id="save-icon">💾</span>
+      <span id="save-label">Saved</span>
+    </button>
+    <span style="font-size:12px;color:#adb5bd">Backend: <b style="color:#fff">Google Sheets</b></span>
+  </div>
+  <div id="dirty-banner" style="display:none;background:#fef3c7;border-bottom:2px solid #f59e0b;padding:7px 20px;font-size:12px;color:#92400e;align-items:center;gap:10px">
+    ⚠️ <b>Ai modificări nesalvate.</b> Apasă <b>💾 Save to Sheets</b> înainte să dai refresh.
+    <button onclick="saveNow()" style="background:#f59e0b;color:#fff;border:none;border-radius:4px;padding:3px 10px;font-weight:700;cursor:pointer;font-size:12px">Salvează acum</button>
+  </div>
+  <div class="tabs" id="tab-bar">
+    <button class="tab active" onclick="switchTab('suites')">📁 Suites &amp; Cases</button>
+    <button class="tab" onclick="switchTab('runs')">🚀 Test Runs <span id="runs-badge" style="display:none;background:#1a73e8;color:#fff;border-radius:10px;padding:1px 6px;font-size:10px;margin-left:4px"></span></button>
+    <button class="tab" onclick="switchTab('plans')">📋 Test Plans</button>
+    <button class="tab" onclick="switchTab('overview')">📊 Overview</button>
+  </div>
+  <div id="loading" style="display:flex;align-items:center;justify-content:center;height:calc(100vh - 96px);flex-direction:column;gap:12px">
+    <div class="spinner"></div><span style="color:#555;font-size:14px">Loading data...</span>
+  </div>
+  <div id="tab-suites" style="display:none;flex:1">
+    <div style="display:flex;height:calc(100vh - 96px)">
+      <div class="sidebar">
+        <div style="padding:0 12px 8px;display:flex;justify-content:space-between;align-items:center">
+          <span style="font-weight:700;color:#1e2a3a;font-size:12px;text-transform:uppercase">Test Suites</span>
+          <button class="btn btn-primary" style="padding:3px 8px;font-size:11px" onclick="openSuiteModal()">+ Add</button>
+        </div>
+        <div id="suite-list"></div>
+      </div>
+      <div class="main" id="cases-main"><div style="color:#aaa;text-align:center;margin-top:60px">← Select a suite</div></div>
+      <div id="detail-panel" style="display:none;width:300px;background:#fff;border-left:1px solid #dde1e7;padding:16px;overflow-y:auto"></div>
+    </div>
+  </div>
+  <div id="tab-runs" style="display:none;padding:24px">
+    <div id="runs-list-view"></div>
+    <div id="run-detail-view" style="display:none"></div>
+  </div>
+  <div id="tab-plans" style="display:none;padding:24px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <h2 style="color:#1e2a3a">📋 Test Plans</h2>
+      <button class="btn btn-primary" onclick="openPlanModal()">+ New Plan</button>
+    </div>
+    <div id="plans-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:16px"></div>
+  </div>
+  <div id="tab-overview" style="display:none;padding:24px">
+    <h2 style="color:#1e2a3a;margin-bottom:20px">📊 Project Overview</h2>
+    <div id="overview-stats" style="display:flex;gap:14px;margin-bottom:24px;flex-wrap:wrap"></div>
+    <div id="overview-suites" style="display:grid;grid-template-columns:1fr 1fr;gap:14px"></div>
+  </div>
+</div>
+<div id="toast" style="display:none;position:fixed;bottom:24px;right:24px;z-index:9999;border-radius:8px;padding:10px 20px;font-weight:600;font-size:13px;box-shadow:0 4px 20px rgba(0,0,0,.12)"></div>
+<div id="modal-bg" class="modal-bg" style="display:none" onclick="if(event.target===this)closeModal()">
+  <div id="modal-content" class="modal"></div>
+</div>
+<div id="bulk-bar" class="bulk-bar" style="display:none">
+  <span id="bulk-count" style="font-size:13px;font-weight:700;color:#4fc3f7;white-space:nowrap"></span>
+  <div style="width:1px;height:20px;background:rgba(255,255,255,.2)"></div>
+  <select onchange="if(this.value){bulkStatus(this.value);this.value=''}" style="background:#253347;color:#fff;border:1px solid #4a5568;border-radius:5px;padding:5px 10px;font-size:12px">
+    <option value="">Change Status…</option>
+    <option>Untested</option><option>Passed</option><option>Failed</option><option>Blocked</option><option>Retest</option>
+  </select>
+  <button onclick="openBulkMoveModal()" style="background:#fff3e0;color:#e67e22;border:1px solid #e67e22;border-radius:5px;padding:6px 12px;font-size:12px;font-weight:600;white-space:nowrap">📦 Move</button>
+  <button onclick="openRunModalWithSelection()" class="btn btn-primary" style="white-space:nowrap">🚀 Add to Run</button>
+  <button onclick="bulkDelete()" style="background:#c0392b;color:#fff;border:none;border-radius:5px;padding:6px 12px;font-size:12px;font-weight:600">🗑️ Delete</button>
+  <button onclick="clearSelection()" style="background:none;color:#adb5bd;border:1px solid #4a5568;border-radius:5px;padding:6px 12px;font-size:12px">✕ Clear</button>
+</div>
+<input type="file" id="import-input" accept=".csv" style="display:none" onchange="handleImport(event)"/>
+<input type="file" id="attachment-input" multiple style="display:none" onchange="handleAttachmentUpload(event)"/>
+
+<script>
+// ══════════════════════════════════════════════════════════
+//  CONFIG
+// ══════════════════════════════════════════════════════════
+const IS_GAS    = (typeof google !== 'undefined');
+const STORE_KEY = 'tt_v3';
+
+const DEFAULT_DB = {
+  suites:[
+    {id:1,name:'Authentication Suite',description:'Login, logout, password reset',cases:[
+      {id:101,suiteId:1,title:'Valid login with email/password',type:'Functional',priority:'Critical',status:'Passed',assignedTo:'Ana M.',automationStatus:'Automated',steps:'1. Navigate to /login\n2. Enter valid credentials\n3. Click Sign In',expected:'User is redirected to dashboard',attachments:[]},
+      {id:102,suiteId:1,title:'Login with invalid password',type:'Functional',priority:'High',status:'Failed',assignedTo:'Ion P.',automationStatus:'Automated',steps:'1. Navigate to /login\n2. Enter wrong password',expected:'Error message is shown',attachments:[]},
+      {id:103,suiteId:1,title:'Password reset flow',type:'Functional',priority:'Medium',status:'Untested',assignedTo:'',automationStatus:'Manual',steps:'1. Click Forgot Password\n2. Enter email',expected:'Reset email received',attachments:[]}
+    ]},
+    {id:2,name:'Dashboard Suite',description:'Dashboard widgets and navigation',cases:[
+      {id:201,suiteId:2,title:'Dashboard loads within 3s',type:'Performance',priority:'High',status:'Untested',assignedTo:'Ana M.',automationStatus:'Planned',steps:'1. Login\n2. Measure load time',expected:'Page loads in < 3 seconds',attachments:[]},
+      {id:202,suiteId:2,title:'Sidebar navigation links',type:'UI',priority:'Medium',status:'Passed',assignedTo:'',automationStatus:'Manual',steps:'1. Click each sidebar item',expected:'Correct page opens',attachments:[]}
+    ]}
+  ],
+  plans:[{id:10,name:'Sprint 12 Regression',description:'Full regression',createdAt:'2026-03-01',selectedSuites:[1,2]}],
+  runs:[{id:20,name:'Smoke Test – Build 42',description:'',createdAt:'2026-03-11',suiteId:1,suiteName:'Authentication Suite',cases:[
+    {id:501,originalId:101,title:'Valid login with email/password',type:'Functional',priority:'Critical',status:'Passed',assignedTo:'Ana M.',automationStatus:'Automated',steps:'1. Navigate\n2. Enter creds',expected:'User redirected'},
+    {id:502,originalId:102,title:'Login with invalid password',type:'Functional',priority:'High',status:'Untested',assignedTo:'Ion P.',automationStatus:'Automated',steps:'1. Navigate\n2. Wrong password',expected:'Error shown'}
+  ]}]
+};
+
+const _files = {};
+
+// ══════════════════════════════════════════════════════════
+//  GAS MOCK
+// ══════════════════════════════════════════════════════════
+if(!IS_GAS){
+  window._db = null;
+  window.google = {script:{run:{
+    _sh:null,_fh:null,
+    withSuccessHandler(fn){const o=Object.create(this);o._sh=fn;return o;},
+    withFailureHandler(fn){const o=Object.create(this);o._fh=fn;return o;},
+    getSuites(){const sh=this._sh;setTimeout(()=>sh&&sh(JSON.stringify(window._db.suites)),60);},
+    getPlans(){ const sh=this._sh;setTimeout(()=>sh&&sh(JSON.stringify(window._db.plans)), 60);},
+    getRuns(){  const sh=this._sh;setTimeout(()=>sh&&sh(JSON.stringify(window._db.runs)),  60);},
+    saveAll(sj,pj,rj){
+      window._db.suites=JSON.parse(sj);window._db.plans=JSON.parse(pj);window._db.runs=JSON.parse(rj);
+      const sh=this._sh;setTimeout(()=>sh&&sh(true),60);
+    },
+    uploadAttachment(b64,name,mime){
+      const id='mock-'+Date.now()+'-'+Math.random().toString(36).slice(2);
+      const dataUrl='data:'+mime+';base64,'+b64;
+      _files[id]=dataUrl;
+      try{window.storage.set('att_'+id,dataUrl).catch(()=>{});}catch(e){}
+      const sh=this._sh;setTimeout(()=>sh&&sh(JSON.stringify({fileId:id,viewUrl:null,fileName:name})),60);
+    },
+    deleteAttachment(id){
+      delete _files[id];
+      try{window.storage.delete('att_'+id).catch(()=>{});}catch(e){}
+      const sh=this._sh;setTimeout(()=>sh&&sh(true),60);
+    }
+  }}};
+}
+
+// ══════════════════════════════════════════════════════════
+//  PERSISTENCE HELPERS  (mock mode only)
+// ══════════════════════════════════════════════════════════
+async function storageLoad(){
+  let data;
+  try{
+    const r=await window.storage.get(STORE_KEY);
+    if(r&&r.value){
+      const d=JSON.parse(r.value);
+      data={suites:Array.isArray(d.suites)?d.suites:DEFAULT_DB.suites,plans:Array.isArray(d.plans)?d.plans:DEFAULT_DB.plans,runs:Array.isArray(d.runs)?d.runs:DEFAULT_DB.runs};
+    }else{data=JSON.parse(JSON.stringify(DEFAULT_DB));}
+  }catch(e){data=JSON.parse(JSON.stringify(DEFAULT_DB));}
+  try{
+    const attKeys=await window.storage.list('att_');
+    if(attKeys&&attKeys.keys){for(const k of attKeys.keys){try{const ar=await window.storage.get(k);if(ar&&ar.value)_files[k.slice(4)]=ar.value;}catch(e2){}}}
+  }catch(e){}
+  return data;
+}
+
+// ══════════════════════════════════════════════════════════
+//  CONSTANTS
+// ══════════════════════════════════════════════════════════
+const SC={Passed:{bg:'#e6f4ea',text:'#1e7e34',border:'#a8d5b5'},Failed:{bg:'#fdecea',text:'#c0392b',border:'#f5c6c2'},Blocked:{bg:'#fff3cd',text:'#856404',border:'#ffc107'},Untested:{bg:'#f1f3f5',text:'#6c757d',border:'#ced4da'},Retest:{bg:'#e8f0fe',text:'#1a56db',border:'#93b4fb'}};
+const PC={Critical:'#c0392b',High:'#e67e22',Medium:'#2980b9',Low:'#27ae60'};
+const TYPES=['Functional','Regression','Smoke','Integration','UI','API','Performance'];
+const PRIORITIES=['Critical','High','Medium','Low'];
+const STATUSES=['Untested','Passed','Failed','Blocked','Retest'];
+const PRIORITY_ORDER={Critical:0,High:1,Medium:2,Low:3};
+const STATUS_ORDER={Passed:0,Failed:1,Blocked:2,Retest:3,Untested:4};
+
+// ══════════════════════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════════════════════
+let suites=[],plans=[],runs=[],selSuiteId=null,selCaseId=null,activeRunId=null,nextId=1000;
+let selIds=new Set(),runSelIds=new Set();
+let filterSt='All',searchVal='';
+let runFormState={name:'',description:'',suiteId:null,mode:'all',pickedIds:new Set(),randomCount:5};
+let runDetailSelCase=null;
+let sortField='id',sortDir='asc';
+let attachmentTargetCaseId=null;
+let isModalOpen=false,isSaving=false,isDirty=false,uploadsInProgress=0;
+
+window.addEventListener('beforeunload',function(e){
+  if(isDirty||isSaving){const m='Ai modificări nesalvate!';e.preventDefault();e.returnValue=m;return m;}
+});
+
+// ══════════════════════════════════════════════════════════
+//  FRESH ID
+// ══════════════════════════════════════════════════════════
+function freshId(){
+  const used=new Set([
+    ...suites.flatMap(s=>[Number(s.id),...s.cases.map(c=>Number(c.id))]),
+    ...plans.map(p=>Number(p.id)),
+    ...runs.flatMap(r=>[Number(r.id),...(r.cases||[]).map(c=>Number(c.id))])
+  ]);
+  while(used.has(nextId)) nextId++;
+  return nextId++;
+}
+
+// ══════════════════════════════════════════════════════════
+//  SAVE STATE
+// ══════════════════════════════════════════════════════════
+function markDirty(){
+  isDirty=true;
+  const btn=document.getElementById('save-btn');
+  btn.className='dirty';
+  document.getElementById('save-icon').textContent='💾';
+  document.getElementById('save-label').textContent='Save to Sheets';
+  document.getElementById('dirty-banner').style.display='flex';
+}
+function markSaved(){
+  isDirty=false;
+  const btn=document.getElementById('save-btn');
+  btn.className='saved';
+  document.getElementById('save-icon').textContent='✓';
+  document.getElementById('save-label').textContent='Saved';
+  document.getElementById('dirty-banner').style.display='none';
+  setTimeout(()=>{if(!isDirty){btn.className='idle';document.getElementById('save-icon').textContent='💾';document.getElementById('save-label').textContent='Saved';}},2500);
+}
+function markSaving(){
+  const btn=document.getElementById('save-btn');
+  btn.className='saving';
+  document.getElementById('save-icon').textContent='⟳';
+  document.getElementById('save-label').textContent='Saving…';
+}
+function markSaveError(msg){
+  isSaving=false;
+  const btn=document.getElementById('save-btn');
+  btn.className='error';
+  document.getElementById('save-icon').textContent='❌';
+  document.getElementById('save-label').textContent='Failed – retry';
+  toast('❌ Save failed: '+msg,'error');
+}
+function _updateSaveBtnForUpload(){
+  const btn=document.getElementById('save-btn');
+  if(uploadsInProgress>0){
+    btn.className='saving';
+    document.getElementById('save-icon').textContent='⬆️';
+    document.getElementById('save-label').textContent='Uploading ('+uploadsInProgress+')…';
+  }else{
+    if(isDirty)markDirty();else markSaved();
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+//  SAVE
+// ══════════════════════════════════════════════════════════
+function saveNow(){
+  if(isSaving)return;
+  if(uploadsInProgress>0){toast('⏳ Upload în curs, așteaptă…','info');return;}
+  if(!isDirty){toast('✓ Already saved','info');return;}
+  isSaving=true; markSaving();
+  const sj=JSON.stringify(suites),pj=JSON.stringify(plans),rj=JSON.stringify(runs);
+  if(!IS_GAS){
+    (async()=>{
+      try{
+        const clean=JSON.parse(JSON.stringify({suites,plans,runs}));
+        for(const suite of clean.suites)for(const c of(suite.cases||[]))for(const att of(c.attachments||[])){
+          if(att.viewUrl&&att.viewUrl.startsWith('data:')){
+            if(!_files[att.fileId]){_files[att.fileId]=att.viewUrl;window.storage.set('att_'+att.fileId,att.viewUrl).catch(()=>{});}
+            att.viewUrl=null;
+          }
+        }
+        const r=await window.storage.set(STORE_KEY,JSON.stringify(clean));
+        if(!r)throw new Error('storage.set returned null');
+        window._db.suites=JSON.parse(sj);window._db.plans=JSON.parse(pj);window._db.runs=JSON.parse(rj);
+        isSaving=false;markSaved();toast('✅ Saved!');
+      }catch(e){markSaveError(e.message);}
+    })();
+    return;
+  }
+  google.script.run
+    .withSuccessHandler(()=>{isSaving=false;markSaved();toast('✅ Saved to Google Sheets!');})
+    .withFailureHandler(e=>markSaveError(e.message||JSON.stringify(e)))
+    .saveAll(sj,pj,rj);
+}
+
+// ══════════════════════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════════════════════
+window.onload = async function(){
+  if(!IS_GAS) window._db = await storageLoad();
+  google.script.run.withSuccessHandler(function(sj){
+    suites=JSON.parse(sj);
+    google.script.run.withSuccessHandler(function(pj){
+      plans=JSON.parse(pj);
+      google.script.run.withSuccessHandler(function(rj){
+        runs=JSON.parse(rj);
+        const ids=[
+          ...suites.flatMap(s=>[Number(s.id),...s.cases.map(c=>Number(c.id))]),
+          ...plans.map(p=>Number(p.id)),
+          ...runs.flatMap(r=>[Number(r.id),...(r.cases||[]).map(c=>Number(c.id))])
+        ];
+        if(ids.length) nextId=Math.max(nextId,...ids)+1;
+        document.getElementById('loading').style.display='none';
+        switchTab('suites');
+        if(suites.length){selSuiteId=suites[0].id;renderAll();}
+        updateRunsBadge();markSaved();
+      }).withFailureHandler(e=>{document.getElementById('loading').style.display='none';toast('❌ '+e.message,'error');}).getRuns();
+    }).withFailureHandler(e=>{document.getElementById('loading').style.display='none';toast('❌ '+e.message,'error');}).getPlans();
+  }).withFailureHandler(e=>{document.getElementById('loading').style.display='none';toast('❌ '+e.message,'error');}).getSuites();
+};
+
+// ══════════════════════════════════════════════════════════
+//  TABS / MODAL
+// ══════════════════════════════════════════════════════════
+function switchTab(t){
+  ['suites','runs','plans','overview'].forEach((id,i)=>{
+    document.getElementById('tab-'+id).style.display='none';
+    document.querySelectorAll('.tab')[i].classList.remove('active');
+  });
+  document.getElementById('tab-'+t).style.display=t==='suites'?'flex':'block';
+  document.querySelectorAll('.tab')[['suites','runs','plans','overview'].indexOf(t)].classList.add('active');
+  if(t==='plans')renderPlans();if(t==='overview')renderOverview();if(t==='runs')renderRunsTab();
+  if(t!=='suites')document.getElementById('bulk-bar').style.display='none';
+}
+function openModal(html){document.getElementById('modal-content').innerHTML=html;document.getElementById('modal-bg').style.display='flex';isModalOpen=true;}
+function closeModal(){document.getElementById('modal-bg').style.display='none';document.getElementById('modal-content').innerHTML='';isModalOpen=false;}
+
+// ══════════════════════════════════════════════════════════
+//  RENDER – SIDEBAR / CASES
+// ══════════════════════════════════════════════════════════
+function renderAll(){renderSidebar();renderCases();}
+function renderSidebar(){
+  document.getElementById('suite-list').innerHTML=suites.map(s=>`
+    <div class="suite-item ${s.id===selSuiteId?'active':''}" onclick="selectSuite(${s.id})">
+      <div><div style="font-weight:600;font-size:13px;color:${s.id===selSuiteId?'#1a73e8':'#2d3748'}">📁 ${esc(s.name)}</div>
+      <div style="font-size:11px;color:#888">${s.cases.length} cases</div></div>
+      <div style="display:flex;gap:2px">
+        <button onclick="event.stopPropagation();openSuiteModal(${s.id})" style="background:none;border:none;font-size:12px">✏️</button>
+        <button onclick="event.stopPropagation();deleteSuite(${s.id})" style="background:none;border:none;font-size:12px">🗑️</button>
+      </div>
+    </div>`).join('');
+}
+function sTh(label,field){
+  const a=sortField===field,arrow=a?(sortDir==='asc'?'▲':'▼'):'';
+  return`<th class="sortable" onclick="toggleSort('${field}')">${label}${a?`<span class="sort-arrow">${arrow}</span>`:''}</th>`;
+}
+function toggleSort(field){if(sortField===field)sortDir=sortDir==='asc'?'desc':'asc';else{sortField=field;sortDir='asc';}renderCases();}
+function sortCasesArr(arr){
+  return[...arr].sort((a,b)=>{
+    let va,vb;
+    if(sortField==='priority'){va=PRIORITY_ORDER[a.priority]??99;vb=PRIORITY_ORDER[b.priority]??99;}
+    else if(sortField==='status'){va=STATUS_ORDER[a.status]??99;vb=STATUS_ORDER[b.status]??99;}
+    else{va=a[sortField]??'';vb=b[sortField]??'';}
+    if(typeof va==='number'&&typeof vb==='number')return sortDir==='asc'?va-vb:vb-va;
+    const c=String(va).localeCompare(String(vb));return sortDir==='asc'?c:-c;
+  });
+}
+function renderCases(){
+  const suite=suites.find(s=>s.id===selSuiteId);
+  const main=document.getElementById('cases-main');
+  if(!suite){main.innerHTML='<div style="color:#aaa;text-align:center;margin-top:60px">← Select a suite</div>';return;}
+  const filtered=suite.cases.filter(c=>(filterSt==='All'||c.status===filterSt)&&c.title.toLowerCase().includes(searchVal.toLowerCase()));
+  const sorted=sortCasesArr(filtered);
+  const allChecked=selIds.size===filtered.length&&filtered.length>0;
+  main.innerHTML=`
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px;gap:12px;flex-wrap:wrap">
+      <div><h2 style="color:#1e2a3a;font-size:17px">📁 ${esc(suite.name)}</h2><p style="color:#666;font-size:12px;margin-top:2px">${esc(suite.description||'')}</p></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-info"      onclick="document.getElementById('import-input').click()">⬆️ Import</button>
+        <button class="btn btn-success"   onclick="exportCsv()">⬇️ Export</button>
+        <button class="btn btn-secondary" onclick="exportAll()">⬇️ Export All</button>
+        <button class="btn btn-primary"   onclick="openCaseModal()">+ New Case</button>
+      </div>
+    </div>
+    <div class="hint">💡 CSV format: <code>title, type, priority, status, assignedTo, automationStatus, steps, expected</code></div>
+    <div style="display:flex;gap:8px;margin-bottom:12px;align-items:center;background:#fff;padding:8px 12px;border-radius:6px;border:1px solid #dde1e7;flex-wrap:wrap">
+      <input placeholder="🔍 Search cases..." value="${esc(searchVal)}" oninput="searchVal=this.value;renderCases()" style="border:1px solid #dde1e7;border-radius:4px;padding:5px 10px;font-size:12px;width:180px"/>
+      <select onchange="filterSt=this.value;renderCases()" style="border:1px solid #dde1e7;border-radius:4px;padding:5px 8px;font-size:12px">
+        <option value="All" ${filterSt==='All'?'selected':''}>All statuses</option>
+        ${STATUSES.map(s=>`<option value="${s}" ${filterSt===s?'selected':''}>${s}</option>`).join('')}
+      </select>
+      <span style="margin-left:auto;font-size:11px;color:#888">${selIds.size>0?`<b style="color:#1a73e8">${selIds.size} selected · </b>`:''} ${filtered.length} cases</span>
+    </div>
+    <div style="background:#fff;border-radius:6px;border:1px solid #dde1e7;overflow:hidden">
+      <table>
+        <thead><tr style="background:#f8f9fa;border-bottom:2px solid #dde1e7">
+          <th style="padding:9px 12px;width:36px"><input type="checkbox" ${allChecked?'checked':''} onchange="toggleAll(this.checked)"/></th>
+          ${sTh('ID','id')}${sTh('Title','title')}${sTh('Type','type')}${sTh('Priority','priority')}${sTh('Status','status')}${sTh('Assigned To','assignedTo')}${sTh('Automation','automationStatus')}
+          <th>Actions</th>
+        </tr></thead>
+        <tbody>
+          ${sorted.length===0?`<tr><td colspan="9" style="text-align:center;padding:30px;color:#aaa">No test cases found</td></tr>`:
+          sorted.map((c,i)=>{
+            const attCount=(c.attachments||[]).length;
+            return`<tr class="${selIds.has(c.id)?'sel-row':i%2===0?'even':'odd'}" onclick="selectCase(${c.id})" style="cursor:pointer">
+              <td style="padding:7px 12px" onclick="event.stopPropagation();toggleCase(${c.id})"><input type="checkbox" ${selIds.has(c.id)?'checked':''} style="cursor:pointer"/></td>
+              <td style="font-size:10px;color:#888">TC-${c.id}</td>
+              <td style="font-weight:500;color:#1e2a3a;max-width:180px">${esc(c.title)}${attCount>0?`<button class="att-chip" onclick="event.stopPropagation();openAttachmentsModal(${c.id})">📎 ${attCount}</button>`:''}</td>
+              <td><span class="chip" style="background:#f0f0f0">${esc(c.type)}</span></td>
+              <td>${priDot(c.priority)}</td>
+              <td><select onchange="updateStatus(${c.id},this.value)" onclick="event.stopPropagation()" style="border:none;background:transparent;font-size:11px;font-weight:600;color:${SC[c.status]?.text||'#666'}">
+                ${STATUSES.map(s=>`<option value="${s}" ${c.status===s?'selected':''}>${s}</option>`).join('')}
+              </select></td>
+              <td style="font-size:12px;color:#555">${esc(c.assignedTo)||'<span style="color:#ccc">—</span>'}</td>
+              <td><span class="chip" style="background:${c.automationStatus==='Automated'?'#e6f4ea':'#f1f3f5'};color:${c.automationStatus==='Automated'?'#1e7e34':'#666'}">${esc(c.automationStatus)}</span></td>
+              <td style="white-space:nowrap">
+                <button class="btn btn-sm" style="background:#e8f0fe;color:#1a73e8;border:none" onclick="event.stopPropagation();openCaseModal(${c.id})">Edit</button>
+                <button class="btn btn-sm" style="background:#fff3e0;color:#e67e22;border:none;margin-left:2px" onclick="event.stopPropagation();openMoveCaseModal(${c.id})" title="Move to another suite">📦</button>
+                <button class="btn btn-sm" style="background:#f3e8ff;color:#7e22ce;border:none;margin-left:2px" onclick="event.stopPropagation();duplicateCase(${c.id})">Dup</button>
+                <button class="btn btn-sm btn-danger" onclick="event.stopPropagation();deleteCase(${c.id})" style="margin-left:2px">Del</button>
+              </td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>`;
+  updateBulkBar();
+}
+
+// ══════════════════════════════════════════════════════════
+//  MOVE CASE(S) BETWEEN SUITES
+// ══════════════════════════════════════════════════════════
+
+/* Renders the suite-picker list used by both single and bulk move modals */
+function _moveSuitePickerHtml(radioName, excludeId){
+  const others=suites.filter(s=>s.id!==excludeId);
+  if(!others.length)return'<div style="text-align:center;padding:20px;color:#aaa;font-size:13px">No other suites exist.</div>';
+  return`<div style="border:1px solid #dde1e7;border-radius:8px;overflow:hidden;max-height:280px;overflow-y:auto">
+    ${others.map(s=>`
+      <label class="move-suite-card" onclick="this.classList.toggle('selected',this.querySelector('input').checked)">
+        <input type="radio" name="${radioName}" value="${s.id}"/>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:600;font-size:13px;color:#1e2a3a">📁 ${esc(s.name)}</div>
+          <div style="font-size:11px;color:#888;margin-top:2px">${s.cases.length} case${s.cases.length!==1?'s':''
+          }${s.description?` · ${esc(s.description)}`:''}</div>
+        </div>
+        <span class="badge" style="background:#f1f3f5;color:#6c757d;border:1px solid #ced4da;font-size:10px">${s.cases.length}</span>
+      </label>`).join('')}
+  </div>`;
+}
+
+function openMoveCaseModal(caseId){
+  const suite=suites.find(s=>s.id===selSuiteId);
+  const c=suite?.cases.find(x=>x.id===caseId);
+  if(!c)return;
+  const others=suites.filter(s=>s.id!==selSuiteId);
+  if(!others.length){toast('No other suites to move to. Create one first.','info');return;}
+  openModal(`
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px">
+      <div style="font-size:22px">📦</div>
+      <div>
+        <h3 style="margin:0;color:#1e2a3a;font-size:16px">Move Test Case</h3>
+        <div style="font-size:11px;color:#888;margin-top:1px">Select the destination suite</div>
+      </div>
+    </div>
+    <div style="background:#f8f9fa;border-radius:6px;padding:9px 13px;margin-bottom:16px;border-left:3px solid #1a73e8">
+      <div style="font-size:10px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">Moving</div>
+      <div style="font-weight:600;font-size:13px;color:#1e2a3a">${esc(c.title)}</div>
+      <div style="font-size:11px;color:#888;margin-top:2px">TC-${c.id} · from <b>${esc(suite.name)}</b></div>
+    </div>
+    <div style="font-weight:700;font-size:11px;color:#555;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Destination suite</div>
+    ${_moveSuitePickerHtml('move-target',selSuiteId)}
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:18px">
+      <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="moveCaseToSuite(${caseId},Number(document.querySelector('[name=move-target]:checked')?.value||0))">📦 Move Case</button>
+    </div>`);
+  // Highlight selected card on radio change
+  document.getElementById('modal-content').querySelectorAll('[name=move-target]').forEach(r=>{
+    r.addEventListener('change',()=>{
+      document.getElementById('modal-content').querySelectorAll('.move-suite-card').forEach(el=>el.classList.remove('selected'));
+      r.closest('.move-suite-card').classList.add('selected');
+    });
+  });
+}
+
+function moveCaseToSuite(caseId, targetSuiteId){
+  if(!targetSuiteId){toast('Please select a destination suite.','info');return;}
+  const srcSuite=suites.find(s=>s.id===selSuiteId);
+  const dstSuite=suites.find(s=>s.id===targetSuiteId);
+  if(!srcSuite||!dstSuite)return;
+  const idx=srcSuite.cases.findIndex(c=>c.id===caseId);
+  if(idx===-1)return;
+  const[c]=srcSuite.cases.splice(idx,1);
+  c.suiteId=targetSuiteId;
+  dstSuite.cases.push(c);
+  if(selCaseId===caseId){selCaseId=null;document.getElementById('detail-panel').style.display='none';}
+  selIds.delete(caseId);
+  closeModal();
+  markDirty();
+  renderAll();
+  toast(`✅ Moved "${c.title}" → ${dstSuite.name}`);
+}
+
+function openBulkMoveModal(){
+  if(!selIds.size)return;
+  const others=suites.filter(s=>s.id!==selSuiteId);
+  if(!others.length){toast('No other suites to move to. Create one first.','info');return;}
+  const srcSuite=suites.find(s=>s.id===selSuiteId);
+  openModal(`
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px">
+      <div style="font-size:22px">📦</div>
+      <div>
+        <h3 style="margin:0;color:#1e2a3a;font-size:16px">Move ${selIds.size} Case${selIds.size!==1?'s':''}</h3>
+        <div style="font-size:11px;color:#888;margin-top:1px">Select the destination suite</div>
+      </div>
+    </div>
+    <div style="background:#fff3e0;border-radius:6px;padding:9px 13px;margin-bottom:16px;border-left:3px solid #e67e22">
+      <div style="font-size:10px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px">Moving from <b style="color:#1e2a3a">${esc(srcSuite?.name||'')}</b></div>
+      <div style="display:flex;flex-wrap:wrap;gap:4px">
+        ${[...selIds].slice(0,6).map(id=>{
+          const c=srcSuite?.cases.find(x=>x.id===id);
+          return c?`<span style="background:#fff;border:1px solid #dde1e7;border-radius:4px;padding:2px 8px;font-size:11px;color:#333">${esc(c.title)}</span>`:'';
+        }).join('')}
+        ${selIds.size>6?`<span style="font-size:11px;color:#888;padding:2px 4px">+${selIds.size-6} more…</span>`:''}
+      </div>
+    </div>
+    <div style="font-weight:700;font-size:11px;color:#555;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Destination suite</div>
+    ${_moveSuitePickerHtml('bulk-move-target',selSuiteId)}
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:18px">
+      <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="bulkMove(Number(document.querySelector('[name=bulk-move-target]:checked')?.value||0))">📦 Move ${selIds.size} Case${selIds.size!==1?'s':''}</button>
+    </div>`);
+  document.getElementById('modal-content').querySelectorAll('[name=bulk-move-target]').forEach(r=>{
+    r.addEventListener('change',()=>{
+      document.getElementById('modal-content').querySelectorAll('.move-suite-card').forEach(el=>el.classList.remove('selected'));
+      r.closest('.move-suite-card').classList.add('selected');
+    });
+  });
+}
+
+function bulkMove(targetSuiteId){
+  if(!targetSuiteId){toast('Please select a destination suite.','info');return;}
+  const srcSuite=suites.find(s=>s.id===selSuiteId);
+  const dstSuite=suites.find(s=>s.id===targetSuiteId);
+  if(!srcSuite||!dstSuite)return;
+  const count=selIds.size;
+  for(const id of selIds){
+    const idx=srcSuite.cases.findIndex(c=>c.id===id);
+    if(idx!==-1){
+      const[c]=srcSuite.cases.splice(idx,1);
+      c.suiteId=targetSuiteId;
+      dstSuite.cases.push(c);
+    }
+  }
+  selIds=new Set();
+  selCaseId=null;
+  document.getElementById('detail-panel').style.display='none';
+  closeModal();
+  markDirty();
+  renderAll();
+  toast(`✅ Moved ${count} case${count!==1?'s':''} → ${dstSuite.name}`);
+}
+
+// ══════════════════════════════════════════════════════════
+//  RENDER – RUNS
+// ══════════════════════════════════════════════════════════
+function renderRunsTab(){if(activeRunId)renderRunDetail();else renderRunsList();}
+function renderRunsList(){
+  document.getElementById('run-detail-view').style.display='none';
+  document.getElementById('runs-list-view').style.display='block';
+  const el=document.getElementById('runs-list-view');
+  if(!runs.length){el.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px"><h2 style="color:#1e2a3a">🚀 Test Runs</h2><button class="btn btn-primary" onclick="openRunModal()">+ New Run</button></div><div style="text-align:center;padding:60px;color:#aaa"><div style="font-size:48px;margin-bottom:12px">🚀</div><div>No test runs yet.</div></div>`;return;}
+  el.innerHTML=`
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px"><h2 style="color:#1e2a3a">🚀 Test Runs</h2><button class="btn btn-primary" onclick="openRunModal()">+ New Run</button></div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:16px">
+    ${runs.map(run=>{
+      const ps=STATUSES.reduce((a,s)=>({...a,[s]:run.cases.filter(c=>c.status===s).length}),{});
+      const pct=run.cases.length?Math.round((ps.Passed||0)/run.cases.length*100):0;
+      return`<div onclick="openRunDetail(${run.id})" style="background:#fff;border-radius:8px;border:1px solid #dde1e7;padding:16px;cursor:pointer">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+          <div><div style="font-weight:700;color:#1e2a3a;font-size:15px">🚀 ${esc(run.name)}</div><div style="font-size:11px;color:#888;margin-top:2px">📁 ${esc(run.suiteName)} · ${run.createdAt}</div></div>
+          <div style="display:flex;gap:4px">
+            <button onclick="event.stopPropagation();duplicateRun(${run.id})" style="background:none;border:none;font-size:14px;cursor:pointer">📋</button>
+            <button onclick="event.stopPropagation();deleteRun(${run.id})" style="background:none;border:none;font-size:14px;color:#c0392b;cursor:pointer">🗑️</button>
+          </div>
+        </div>
+        ${run.description?`<div style="font-size:12px;color:#666;margin-bottom:8px">${esc(run.description)}</div>`:''}
+        <div style="margin-bottom:10px">
+          <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px"><span style="color:#666">${run.cases.length} cases</span><span style="font-weight:700;color:${pct===100?'#1e7e34':'#1a73e8'}">${pct}% passed</span></div>
+          <div class="progress-bar"><div class="progress-fill" style="width:${pct}%;background:${pct===100?'#27ae60':'#1a73e8'}"></div></div>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">${STATUSES.filter(s=>ps[s]>0).map(s=>`<span class="badge" style="background:${SC[s].bg};color:${SC[s].text};border:1px solid ${SC[s].border}">${ps[s]} ${s}</span>`).join('')}</div>
+      </div>`;
+    }).join('')}</div>`;
+}
+function openRunDetail(id){activeRunId=id;runSelIds=new Set();runDetailSelCase=null;renderRunDetail();}
+function renderRunDetail(){
+  document.getElementById('runs-list-view').style.display='none';
+  document.getElementById('run-detail-view').style.display='block';
+  const run=runs.find(r=>r.id===activeRunId);if(!run)return;
+  const ps=STATUSES.reduce((a,s)=>({...a,[s]:run.cases.filter(c=>c.status===s).length}),{});
+  const pct=run.cases.length?Math.round((ps.Passed||0)/run.cases.length*100):0;
+  const allChecked=runSelIds.size===run.cases.length&&run.cases.length>0;
+  document.getElementById('run-detail-view').innerHTML=`
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap">
+      <button class="btn btn-secondary" onclick="backToRuns()">← All Runs</button>
+      <div style="flex:1"><h2 style="color:#1e2a3a;margin:0">🚀 ${esc(run.name)}</h2><span style="font-size:12px;color:#888">📁 ${esc(run.suiteName)} · ${run.createdAt} · ${run.cases.length} cases</span></div>
+      <button class="btn btn-danger" onclick="deleteRun(${run.id})">🗑️ Delete Run</button>
+    </div>
+    <div style="background:#fff;border-radius:8px;border:1px solid #dde1e7;padding:16px;margin-bottom:16px;display:flex;gap:20px;align-items:center;flex-wrap:wrap">
+      <div style="flex:1;min-width:200px">
+        <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px"><span style="color:#666;font-weight:600">Overall Progress</span><span style="font-weight:800;color:${pct===100?'#1e7e34':'#1a73e8'};font-size:16px">${pct}%</span></div>
+        <div class="progress-bar" style="height:10px"><div class="progress-fill" style="width:${pct}%;background:${pct===100?'#27ae60':'#1a73e8'}"></div></div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">${STATUSES.filter(s=>ps[s]>0).map(s=>`<span class="badge" style="background:${SC[s].bg};color:${SC[s].text};border:1px solid ${SC[s].border}">${ps[s]} ${s}</span>`).join('')}</div>
+    </div>
+    <div style="background:#fff;border-radius:6px;border:1px solid #dde1e7;overflow:hidden">
+      <div style="padding:10px 16px;border-bottom:1px solid #dde1e7;display:flex;justify-content:space-between;align-items:center;background:#f8f9fa;flex-wrap:wrap;gap:8px">
+        <span style="font-weight:700;font-size:13px;color:#1e2a3a">Test Cases in Run</span>
+        <div style="display:${runSelIds.size>0?'flex':'none'};gap:8px;align-items:center">
+          <span style="font-size:12px;font-weight:600">${runSelIds.size} selected</span>
+          <select onchange="if(this.value){bulkRunStatus(${run.id},this.value);this.value=''}" style="border:1px solid #dde1e7;border-radius:4px;padding:4px 8px;font-size:12px">
+            <option value="">Change Status…</option>${STATUSES.map(s=>`<option>${s}</option>`).join('')}
+          </select>
+          <button onclick="runSelIds=new Set();renderRunDetail()" style="background:none;border:none;cursor:pointer;font-size:13px;color:#888">✕</button>
+        </div>
+      </div>
+      <table>
+        <thead><tr style="background:#f8f9fa;border-bottom:2px solid #dde1e7">
+          <th style="padding:9px 12px;width:36px"><input type="checkbox" ${allChecked?'checked':''} onchange="toggleAllRun(${run.id},this.checked)"/></th>
+          <th>ID</th><th>Title</th><th>Type</th><th>Priority</th><th>Run Status</th><th>Assigned To</th><th>Steps</th>
+        </tr></thead>
+        <tbody>
+          ${run.cases.map((c,i)=>`
+            <tr class="${runSelIds.has(c.id)?'sel-row':i%2===0?'even':'odd'}">
+              <td style="padding:7px 12px" onclick="toggleRunCase(${c.id})"><input type="checkbox" ${runSelIds.has(c.id)?'checked':''}/></td>
+              <td style="font-size:10px;color:#888">TC-${c.originalId}</td>
+              <td style="font-weight:500;color:#1e2a3a;max-width:220px">${esc(c.title)}</td>
+              <td><span class="chip" style="background:#f0f0f0">${esc(c.type)}</span></td>
+              <td>${priDot(c.priority)}</td>
+              <td><select onchange="updateRunCaseStatus(${run.id},${c.id},this.value)" style="border:1px solid ${SC[c.status]?.border||'#dde1e7'};background:${SC[c.status]?.bg||'#f1f3f5'};color:${SC[c.status]?.text||'#555'};border-radius:4px;padding:3px 8px;font-weight:600;font-size:11px">
+                ${STATUSES.map(s=>`<option value="${s}" ${c.status===s?'selected':''}>${s}</option>`).join('')}
+              </select></td>
+              <td style="font-size:12px;color:#555">${esc(c.assignedTo)||'<span style="color:#ccc">—</span>'}</td>
+              <td>${c.steps?`<button onclick="showRunCaseDetail(${run.id},${c.id})" style="background:${runDetailSelCase===c.id?'#1a73e8':'#f1f3f5'};color:${runDetailSelCase===c.id?'#fff':'#555'};border:none;border-radius:3px;padding:3px 7px;cursor:pointer;font-size:11px">Steps</button>`:'—'}</td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+    ${runDetailSelCase?renderRunCasePanel(run):''}`;
+}
+function renderRunCasePanel(run){
+  const c=run.cases.find(x=>x.id===runDetailSelCase);if(!c)return'';
+  return`<div style="position:fixed;right:0;top:96px;bottom:0;width:300px;background:#fff;border-left:2px solid #1a73e8;padding:16px;overflow-y:auto;z-index:50;box-shadow:-4px 0 16px rgba(0,0,0,.06)">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <span style="font-weight:700;color:#1e2a3a;font-size:13px">Test Steps</span>
+      <button onclick="runDetailSelCase=null;renderRunDetail()" style="background:none;border:none;cursor:pointer;font-size:16px;color:#888">✕</button>
+    </div>
+    <div style="font-size:10px;color:#888;margin-bottom:4px">TC-${c.originalId}</div>
+    <div style="font-weight:700;font-size:14px;color:#1e2a3a;margin-bottom:12px">${esc(c.title)}</div>
+    ${c.steps?`<div style="font-weight:700;font-size:10px;color:#495057;text-transform:uppercase;margin-bottom:4px">Steps</div><pre style="background:#f8f9fa;border-radius:4px;padding:8px;font-size:11px;white-space:pre-wrap;color:#333;margin-bottom:12px">${esc(c.steps)}</pre>`:''}
+    ${c.expected?`<div style="font-weight:700;font-size:10px;color:#495057;text-transform:uppercase;margin-bottom:4px">Expected</div><pre style="background:#e6f4ea;border-radius:4px;padding:8px;font-size:11px;white-space:pre-wrap;color:#1e7e34">${esc(c.expected)}</pre>`:''}
+  </div>`;
+}
+function showRunCaseDetail(runId,caseId){runDetailSelCase=runDetailSelCase===caseId?null:caseId;renderRunDetail();}
+function backToRuns(){activeRunId=null;runSelIds=new Set();runDetailSelCase=null;renderRunsList();}
+
+// ══════════════════════════════════════════════════════════
+//  RENDER – DETAIL PANEL
+// ══════════════════════════════════════════════════════════
+function renderDetailPanel(){
+  const panel=document.getElementById('detail-panel');
+  const suite=suites.find(s=>s.id===selSuiteId);
+  const c=suite?.cases.find(c=>c.id===selCaseId);
+  if(!c||selIds.size>0){panel.style.display='none';return;}
+  panel.style.display='block';
+  const sc=SC[c.status]||SC.Untested,atts=c.attachments||[];
+  panel.innerHTML=`
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <span style="font-weight:700;color:#1e2a3a;font-size:13px">Case Details</span>
+      <button onclick="selCaseId=null;renderDetailPanel()" style="background:none;border:none;cursor:pointer;font-size:16px;color:#888">✕</button>
+    </div>
+    <div style="font-size:10px;color:#888;margin-bottom:4px">TC-${c.id}</div>
+    <div style="font-weight:700;font-size:14px;color:#1e2a3a;margin-bottom:12px">${esc(c.title)}</div>
+    ${[['Status',`<span class="badge" style="background:${sc.bg};color:${sc.text};border:1px solid ${sc.border}">${c.status}</span>`],['Priority',priDot(c.priority)],['Type',esc(c.type)],['Assigned To',esc(c.assignedTo)||'—'],['Automation',esc(c.automationStatus)]].map(([l,v])=>`<div style="display:flex;justify-content:space-between;border-bottom:1px solid #f0f0f0;padding-bottom:6px;margin-bottom:6px"><span style="font-size:11px;color:#888">${l}</span><span style="font-size:12px;font-weight:500">${v}</span></div>`).join('')}
+    ${c.steps?`<div style="margin-top:10px;font-weight:700;font-size:10px;color:#495057;text-transform:uppercase">Test Steps</div><pre style="background:#f8f9fa;border-radius:4px;padding:8px;font-size:11px;white-space:pre-wrap;margin-top:4px;color:#333">${esc(c.steps)}</pre>`:''}
+    ${c.expected?`<div style="margin-top:8px;font-weight:700;font-size:10px;color:#495057;text-transform:uppercase">Expected Result</div><pre style="background:#e6f4ea;border-radius:4px;padding:8px;font-size:11px;white-space:pre-wrap;margin-top:4px;color:#1e7e34">${esc(c.expected)}</pre>`:''}
+    <div style="margin-top:16px;padding-top:12px;border-top:1px solid #eee">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <span style="font-weight:700;font-size:10px;color:#495057;text-transform:uppercase">📎 Attachments</span>
+        <span style="font-size:11px;color:#888">${atts.length} file${atts.length!==1?'s':''}</span>
+      </div>
+      ${atts.length===0?`<div style="font-size:11px;color:#bbb;text-align:center;padding:6px 0">No files attached</div>`:
+        atts.slice(0,3).map(att=>`<div style="display:flex;align-items:center;gap:6px;padding:5px 8px;background:#f8f9fa;border-radius:4px;margin-bottom:3px">
+          <span style="font-size:14px">${getFileIcon(att.type)}</span>
+          <span style="flex:1;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#333">${esc(att.name)}</span>
+          <button onclick="viewAttachment(${c.id},${att.id})" style="background:none;border:none;cursor:pointer;color:#1a73e8;font-size:12px">↗</button>
+        </div>`).join('')+(atts.length>3?`<div style="font-size:11px;color:#888;text-align:center;padding:4px">+${atts.length-3} more</div>`:'')
+      }
+      <button class="btn btn-secondary" style="width:100%;margin-top:6px;font-size:11px" onclick="openAttachmentsModal(${c.id})">📎 Manage Attachments</button>
+    </div>
+    <div style="display:flex;gap:6px;margin-top:12px">
+      <button class="btn btn-primary" onclick="openCaseModal(${c.id})" style="flex:1">✏️ Edit</button>
+      <button onclick="openMoveCaseModal(${c.id})" title="Move to another suite" style="background:#fff3e0;color:#e67e22;border:1px solid #e67e22;border-radius:5px;padding:7px 12px;font-weight:600;font-size:12px">📦 Move</button>
+    </div>`;
+}
+
+// ══════════════════════════════════════════════════════════
+//  RENDER – PLANS & OVERVIEW
+// ══════════════════════════════════════════════════════════
+function renderPlans(){
+  const el=document.getElementById('plans-grid');
+  if(!plans.length){el.innerHTML='<div style="color:#aaa;padding:40px;text-align:center">No test plans yet.</div>';return;}
+  el.innerHTML=plans.map(plan=>{
+    const cases=suites.filter(s=>(plan.selectedSuites||[]).includes(s.id)).flatMap(s=>s.cases);
+    const ps=STATUSES.reduce((a,s)=>({...a,[s]:cases.filter(c=>c.status===s).length}),{});
+    const pct=cases.length?Math.round((ps.Passed||0)/cases.length*100):0;
+    return`<div style="background:#fff;border-radius:8px;border:1px solid #dde1e7;padding:16px">
+      <div style="display:flex;justify-content:space-between"><div style="font-weight:700;color:#1e2a3a;font-size:15px">📋 ${esc(plan.name)}</div><span style="font-size:11px;color:#888">${plan.createdAt||''}</span></div>
+      <div style="color:#666;font-size:12px;margin-top:4px">${esc(plan.description||'')}</div>
+      <div style="margin-top:12px"><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px"><span>Progress (${cases.length} cases)</span><span style="font-weight:700;color:${pct===100?'#1e7e34':'#1a73e8'}">${pct}%</span></div><div class="progress-bar"><div class="progress-fill" style="width:${pct}%;background:${pct===100?'#27ae60':'#1a73e8'}"></div></div></div>
+      <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">${STATUSES.filter(s=>ps[s]>0).map(s=>`<span class="badge" style="background:${SC[s].bg};color:${SC[s].text};border:1px solid ${SC[s].border}">${ps[s]} ${s}</span>`).join('')}</div>
+    </div>`;
+  }).join('');
+}
+function renderOverview(){
+  const all=suites.flatMap(s=>s.cases);
+  const gs=STATUSES.reduce((a,s)=>({...a,[s]:all.filter(c=>c.status===s).length}),{});
+  document.getElementById('overview-stats').innerHTML=[['Total Cases',all.length,'#1a73e8'],['Test Runs',runs.length,'#8e44ad'],...STATUSES.map(s=>[s,gs[s],SC[s].text])].map(([l,v,c])=>`<div style="background:#fff;border-radius:8px;border:1px solid #dde1e7;padding:14px 22px;min-width:100px;text-align:center"><div style="font-size:26px;font-weight:800;color:${c}">${v}</div><div style="font-size:11px;color:#666;margin-top:2px">${l}</div></div>`).join('');
+  document.getElementById('overview-suites').innerHTML=suites.map(s=>{const p=s.cases.filter(c=>c.status==='Passed').length;const pct=s.cases.length?Math.round(p/s.cases.length*100):0;return`<div style="background:#fff;border-radius:8px;border:1px solid #dde1e7;padding:16px"><div style="font-weight:700;color:#1e2a3a;margin-bottom:6px">📁 ${esc(s.name)}</div><div style="font-size:12px;color:#666;margin-bottom:8px">${s.cases.length} cases · ${p} passed</div><div class="progress-bar"><div class="progress-fill" style="width:${pct}%;background:#27ae60"></div></div><div style="font-size:11px;color:#888;margin-top:4px;text-align:right">${pct}% passed</div></div>`;}).join('');
+}
+
+// ══════════════════════════════════════════════════════════
+//  ACTIONS
+// ══════════════════════════════════════════════════════════
+function selectSuite(id){selSuiteId=id;selCaseId=null;selIds=new Set();renderAll();document.getElementById('detail-panel').style.display='none';updateBulkBar();}
+function selectCase(id){selCaseId=id;renderDetailPanel();renderCases();}
+function updateStatus(caseId,status){const suite=suites.find(s=>s.id===selSuiteId);if(!suite)return;const c=suite.cases.find(c=>c.id===caseId);if(c){c.status=status;markDirty();renderDetailPanel();}}
+function updateRunCaseStatus(runId,caseId,status){const run=runs.find(r=>r.id===runId);if(!run)return;const c=run.cases.find(c=>c.id===caseId);if(c){c.status=status;markDirty();renderRunDetail();}}
+function deleteSuite(id){if(!confirm('Delete suite and all its cases?'))return;suites=suites.filter(s=>s.id!==id);if(selSuiteId===id)selSuiteId=suites[0]?.id||null;markDirty();renderAll();}
+function deleteCase(id){
+  const suite=suites.find(s=>s.id===selSuiteId);if(!suite)return;
+  const idx=suite.cases.findIndex(c=>c.id===id);
+  if(idx===-1)return;
+  suite.cases.splice(idx,1);
+  if(selCaseId===id){selCaseId=null;document.getElementById('detail-panel').style.display='none';}
+  selIds.delete(id);
+  markDirty();renderCases();renderSidebar();
+}
+function deleteRun(id){if(!confirm('Delete this test run?'))return;runs=runs.filter(r=>r.id!==id);if(activeRunId===id){activeRunId=null;renderRunsList();}else renderRunsList();markDirty();updateRunsBadge();}
+function duplicateCase(id){
+  const suite=suites.find(s=>s.id===selSuiteId);if(!suite)return;
+  const c=suite.cases.find(x=>x.id===id);if(!c)return;
+  const newTitle=uniqueCopyName(suite.cases.map(x=>x.title),'Copy of '+c.title);
+  suite.cases.push({...c,id:freshId(),title:newTitle,attachments:[]});
+  markDirty();renderCases();renderSidebar();toast(`✅ Case duplicated as "${newTitle}"`);
+}
+function duplicateRun(id){
+  const run=runs.find(r=>r.id===id);if(!run)return;
+  const newName=uniqueCopyName(runs.map(r=>r.name),'Copy of '+run.name);
+  runs.push({...run,id:freshId(),name:newName,createdAt:new Date().toISOString().slice(0,10),cases:run.cases.map(c=>({...c,id:freshId(),status:'Untested'}))});
+  markDirty();renderRunsList();updateRunsBadge();toast(`✅ Run duplicated as "${newName}"`);
+}
+function uniqueCopyName(existing,base){
+  const low=existing.map(n=>n.toLowerCase());
+  if(!low.includes(base.toLowerCase()))return base;
+  let i=2;while(low.includes((base+' ('+i+')').toLowerCase()))i++;return base+' ('+i+')';
+}
+function toggleCase(id){selIds.has(id)?selIds.delete(id):selIds.add(id);renderCases();}
+function toggleAll(checked){const suite=suites.find(s=>s.id===selSuiteId);const f=suite?.cases.filter(c=>(filterSt==='All'||c.status===filterSt)&&c.title.toLowerCase().includes(searchVal.toLowerCase()))||[];selIds=checked?new Set(f.map(c=>c.id)):new Set();renderCases();}
+function clearSelection(){selIds=new Set();renderCases();}
+function bulkStatus(status){const suite=suites.find(s=>s.id===selSuiteId);if(!suite)return;suite.cases=suite.cases.map(c=>selIds.has(c.id)?{...c,status}:c);markDirty();toast(selIds.size+' cases → '+status);selIds=new Set();renderCases();}
+function bulkDelete(){
+  const suite=suites.find(s=>s.id===selSuiteId);if(!suite)return;
+  if(!confirm(`Delete ${selIds.size} selected cases?`))return;
+  for(const id of selIds){
+    const idx=suite.cases.findIndex(c=>c.id===id);
+    if(idx!==-1)suite.cases.splice(idx,1);
+  }
+  markDirty();toast('Cases deleted.','info');selIds=new Set();renderCases();renderSidebar();
+}
+function updateBulkBar(){const bar=document.getElementById('bulk-bar');if(selIds.size>0){bar.style.display='flex';document.getElementById('bulk-count').innerHTML=selIds.size+` case${selIds.size>1?'s':''} selected`;}else bar.style.display='none';}
+function toggleRunCase(id){runSelIds.has(id)?runSelIds.delete(id):runSelIds.add(id);renderRunDetail();}
+function toggleAllRun(runId,checked){const run=runs.find(r=>r.id===runId);runSelIds=checked?new Set(run.cases.map(c=>c.id)):new Set();renderRunDetail();}
+function bulkRunStatus(runId,status){const run=runs.find(r=>r.id===runId);if(!run)return;run.cases=run.cases.map(c=>runSelIds.has(c.id)?{...c,status}:c);markDirty();toast(runSelIds.size+' cases → '+status);runSelIds=new Set();renderRunDetail();}
+function updateRunsBadge(){const b=document.getElementById('runs-badge');runs.length>0?(b.textContent=runs.length,b.style.display='inline'):b.style.display='none';}
+
+// ══════════════════════════════════════════════════════════
+//  MODALS – SUITE / CASE / PLAN
+// ══════════════════════════════════════════════════════════
+function openSuiteModal(id){
+  const s=id?suites.find(x=>x.id===id):{};
+  openModal(`<h3 style="margin:0 0 20px;color:#1e2a3a">${id?'Edit Suite':'New Suite'}</h3>
+    <div style="margin-bottom:12px"><label class="form-label">Name *</label><input id="m-sname" class="form-input" value="${esc(s.name||'')}"/>
+    <div id="m-sname-err" class="field-error">⚠️ A suite with this name already exists.</div></div>
+    <div style="margin-bottom:20px"><label class="form-label">Description</label><input id="m-sdesc" class="form-input" value="${esc(s.description||'')}"/></div>
+    <div style="display:flex;gap:10px;justify-content:flex-end">
+      <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveSuiteForm(${id||'null'})">Save</button>
+    </div>`);
+}
+function saveSuiteForm(id){
+  const name=document.getElementById('m-sname').value.trim(),desc=document.getElementById('m-sdesc').value.trim();
+  if(!name)return;
+  if(suites.some(s=>s.name.toLowerCase()===name.toLowerCase()&&String(s.id)!==String(id))){
+    const e=document.getElementById('m-sname-err');e.classList.add('visible');document.getElementById('m-sname').style.borderColor='#c0392b';return;
+  }
+  if(id&&id!=='null'){const s=suites.find(x=>String(x.id)===String(id));if(s){s.name=name;s.description=desc;}}
+  else suites.push({id:freshId(),name,description:desc,cases:[]});
+  closeModal();markDirty();renderAll();
+}
+function openCaseModal(id){
+  const suite=suites.find(s=>s.id===selSuiteId);if(!suite)return;
+  const cid=(id!=null&&id!=='null')?Number(id):null;
+  const c=cid!=null?suite.cases.find(x=>x.id===cid):{};
+  if(cid!=null&&!c)return;
+  openModal(`<h3 style="margin:0 0 16px;color:#1e2a3a">${cid!=null?'Edit Test Case':'New Test Case'}</h3>
+    <div style="margin-bottom:12px"><label class="form-label">Title *</label><input id="m-ctitle" class="form-input" value="${esc(c.title||'')}"/>
+    <div id="m-ctitle-err" class="field-error">⚠️ A test case with this title already exists in this suite.</div></div>
+    <div style="margin-bottom:12px"><label class="form-label">Assigned To</label><input id="m-cassigned" class="form-input" value="${esc(c.assignedTo||'')}"/></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-bottom:12px">
+      ${[['Type','m-ctype',TYPES,c.type||'Functional'],['Priority','m-cpri',PRIORITIES,c.priority||'Medium'],['Status','m-cst',STATUSES,c.status||'Untested'],['Automation','m-cauto',['Manual','Automated','Planned'],c.automationStatus||'Manual']].map(([l,fid,opts,val])=>`<div><label class="form-label" style="font-size:11px">${l}</label><select id="${fid}" class="form-input" style="padding:6px">${opts.map(o=>`<option ${o===val?'selected':''}>${o}</option>`).join('')}</select></div>`).join('')}
+    </div>
+    <div style="margin-bottom:12px"><label class="form-label">Test Steps</label><textarea id="m-csteps" class="form-input" rows="3" style="resize:vertical">${esc(c.steps||'')}</textarea></div>
+    <div style="margin-bottom:20px"><label class="form-label">Expected Result</label><textarea id="m-cexp" class="form-input" rows="2" style="resize:vertical">${esc(c.expected||'')}</textarea></div>
+    <div style="display:flex;gap:10px;justify-content:flex-end">
+      <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveCaseForm(${cid!=null?cid:'null'})">Save</button>
+    </div>`);
+}
+function saveCaseForm(id){
+  const suite=suites.find(s=>s.id===selSuiteId);if(!suite)return;
+  const cid=(id!=null&&id!=='null')?Number(id):null;
+  const title=document.getElementById('m-ctitle').value.trim();if(!title)return;
+  const isDup=suite.cases.some(c=>c.title.toLowerCase()===title.toLowerCase()&&(cid===null||c.id!==cid));
+  if(isDup){const e=document.getElementById('m-ctitle-err');e.classList.add('visible');document.getElementById('m-ctitle').style.borderColor='#c0392b';return;}
+  const obj={title,assignedTo:document.getElementById('m-cassigned').value,type:document.getElementById('m-ctype').value,priority:document.getElementById('m-cpri').value,status:document.getElementById('m-cst').value,automationStatus:document.getElementById('m-cauto').value,steps:document.getElementById('m-csteps').value,expected:document.getElementById('m-cexp').value};
+  if(cid!=null){const c=suite.cases.find(x=>x.id===cid);if(c)Object.assign(c,obj);}
+  else suite.cases.push({id:freshId(),suiteId:selSuiteId,...obj,attachments:[]});
+  closeModal();markDirty();renderCases();renderSidebar();
+}
+function openPlanModal(){
+  openModal(`<h3 style="margin:0 0 16px;color:#1e2a3a">New Test Plan</h3>
+    <div style="margin-bottom:12px"><label class="form-label">Name *</label><input id="m-pname" class="form-input"/></div>
+    <div style="margin-bottom:12px"><label class="form-label">Description</label><input id="m-pdesc" class="form-input"/></div>
+    <div style="margin-bottom:20px"><label class="form-label">Include Suites</label>
+      ${suites.map(s=>`<label style="display:flex;align-items:center;gap:8px;margin-bottom:6px;cursor:pointer"><input type="checkbox" value="${s.id}" class="plan-suite-cb"/><span style="font-size:13px">📁 ${esc(s.name)} (${s.cases.length} cases)</span></label>`).join('')}
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end">
+      <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="savePlanForm()">Create Plan</button>
+    </div>`);
+}
+function savePlanForm(){
+  const name=document.getElementById('m-pname').value.trim();if(!name)return;
+  plans.push({id:freshId(),name,description:document.getElementById('m-pdesc').value,createdAt:new Date().toISOString().slice(0,10),selectedSuites:[...document.querySelectorAll('.plan-suite-cb:checked')].map(el=>Number(el.value))});
+  closeModal();markDirty();renderPlans();
+}
+
+// ══════════════════════════════════════════════════════════
+//  MODALS – RUN
+// ══════════════════════════════════════════════════════════
+function openRunModal(prePickedIds){runFormState={name:'',description:'',suiteId:suites[0]?.id||null,mode:prePickedIds?'manual':'all',pickedIds:prePickedIds||new Set(),randomCount:5};renderRunModal();}
+function openRunModalWithSelection(){openRunModal(new Set(selIds));}
+function renderRunModal(){
+  const f=runFormState,suite=suites.find(s=>s.id===f.suiteId);
+  const caseCount=f.mode==='all'?suite?.cases.length||0:f.mode==='manual'?f.pickedIds.size:f.randomCount;
+  openModal(`<h3 style="margin:0 0 20px;color:#1e2a3a">🚀 New Test Run</h3>
+    <div style="margin-bottom:12px"><label class="form-label">Run Name *</label><input id="m-rname" class="form-input" value="${esc(f.name)}" oninput="runFormState.name=this.value"/>
+    <div id="m-rname-err" class="field-error">⚠️ A run with this name already exists.</div></div>
+    <div style="margin-bottom:12px"><label class="form-label">Description</label><input id="m-rdesc" class="form-input" value="${esc(f.description)}" oninput="runFormState.description=this.value"/></div>
+    <div style="margin-bottom:16px"><label class="form-label">Suite *</label>
+      <select class="form-input" onchange="runFormState.suiteId=Number(this.value);runFormState.pickedIds=new Set();closeModal();renderRunModal()">
+        ${suites.map(s=>`<option value="${s.id}" ${f.suiteId===s.id?'selected':''}>${esc(s.name)} (${s.cases.length} cases)</option>`).join('')}
+      </select>
+    </div>
+    <div style="margin-bottom:16px"><label class="form-label">Case Selection Mode</label>
+      <div style="display:flex;gap:8px">
+        ${[['all','🗂️ All Cases','Every case'],['manual','☑️ Pick Manually','Hand-pick'],['random','🎲 Random','Pick N randomly']].map(([m,l,h])=>`<button class="mode-btn ${f.mode===m?'active':''}" onclick="runFormState.mode='${m}';closeModal();renderRunModal()">${l}<div style="font-size:10px;color:${f.mode===m?'#1a56db':'#aaa'};font-weight:400;margin-top:2px">${h}</div></button>`).join('')}
+      </div>
+    </div>
+    ${f.mode==='random'?`<div style="margin-bottom:16px;background:#f8f9fa;border-radius:8px;padding:14px;border:1px solid #dde1e7"><label class="form-label">How many cases?</label><div style="display:flex;align-items:center;gap:12px;margin-top:8px"><input type="number" id="m-rcount" min="1" max="${suite?.cases.length||99}" value="${f.randomCount}" oninput="runFormState.randomCount=Math.max(1,Number(this.value))" style="border:1px solid #dde1e7;border-radius:5px;padding:7px 10px;font-size:16px;width:80px;text-align:center;font-weight:700"/><span style="font-size:12px;color:#888">out of <b>${suite?.cases.length||0}</b> total</span></div></div>`:''}
+    ${f.mode==='manual'&&suite?`<div style="margin-bottom:16px;border:1px solid #dde1e7;border-radius:8px;overflow:hidden"><div style="background:#f8f9fa;padding:8px 14px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #dde1e7"><span style="font-size:12px;font-weight:700">Select cases</span><div style="display:flex;gap:10px"><button onclick="runFormState.pickedIds=new Set(suites.find(s=>s.id===runFormState.suiteId)?.cases.map(c=>c.id)||[]);closeModal();renderRunModal()" style="background:none;border:none;cursor:pointer;font-size:11px;color:#1a73e8;font-weight:600">Select All</button><button onclick="runFormState.pickedIds=new Set();closeModal();renderRunModal()" style="background:none;border:none;cursor:pointer;font-size:11px;color:#888">Clear</button></div></div><div style="max-height:240px;overflow-y:auto">${suite.cases.map(c=>{const picked=f.pickedIds.has(c.id);const sc=SC[c.status]||SC.Untested;return`<label class="case-picker-row ${picked?'picked':''}"><input type="checkbox" ${picked?'checked':''} onchange="if(this.checked)runFormState.pickedIds.add(${c.id});else runFormState.pickedIds.delete(${c.id})" style="cursor:pointer;width:16px;height:16px"/><div style="flex:1;min-width:0"><div style="font-size:13px;color:#1e2a3a;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(c.title)}</div><div style="display:flex;gap:6px;margin-top:2px"><span style="font-size:10px;color:${PC[c.priority]||'#888'};font-weight:600">${c.priority}</span><span style="font-size:10px;color:#888">${c.type}</span></div></div><span class="badge" style="background:${sc.bg};color:${sc.text};border:1px solid ${sc.border};font-size:10px">${c.status}</span></label>`;}).join('')}</div><div style="background:#f8f9fa;padding:8px 14px;border-top:1px solid #dde1e7;font-size:12px;color:${f.pickedIds.size>0?'#1a73e8':'#888'};font-weight:600">${f.pickedIds.size} case${f.pickedIds.size!==1?'s':''} selected</div></div>`:''}
+    ${f.suiteId?`<div style="background:#e8f0fe;border-radius:6px;padding:10px 14px;margin-bottom:16px;font-size:12px;color:#1a56db;font-weight:600">ℹ️ This run will include <b>${caseCount}</b> case${caseCount!==1?'s':''} from <b>${esc(suite?.name||'')}</b>.</div>`:''}
+    <div style="display:flex;gap:10px;justify-content:flex-end">
+      <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="createRun()">🚀 Create Run</button>
+    </div>`);
+}
+function createRun(){
+  const f=runFormState;if(!f.name.trim()||!f.suiteId)return;
+  if(runs.some(r=>r.name.toLowerCase()===f.name.trim().toLowerCase())){
+    const e=document.getElementById('m-rname-err');if(e){e.classList.add('visible');document.getElementById('m-rname').style.borderColor='#c0392b';}return;
+  }
+  const suite=suites.find(s=>s.id===f.suiteId);if(!suite)return;
+  let picked;
+  if(f.mode==='all')picked=[...suite.cases];
+  else if(f.mode==='manual')picked=suite.cases.filter(c=>f.pickedIds.has(c.id));
+  else picked=[...suite.cases].sort(()=>Math.random()-.5).slice(0,Math.min(f.randomCount,suite.cases.length));
+  const rid=freshId();
+  runs.push({id:rid,name:f.name,description:f.description,createdAt:new Date().toISOString().slice(0,10),suiteId:suite.id,suiteName:suite.name,cases:picked.map(c=>({...c,id:freshId(),originalId:c.id,status:'Untested'}))});
+  closeModal();markDirty();activeRunId=rid;switchTab('runs');updateRunsBadge();
+  toast(`Run created with ${picked.length} cases!`);
+}
+
+// ══════════════════════════════════════════════════════════
+//  ATTACHMENTS
+// ══════════════════════════════════════════════════════════
+function openAttachmentsModal(caseId){
+  attachmentTargetCaseId=caseId;
+  const found=findCaseById(caseId);if(!found)return;
+  const{c}=found;if(!c.attachments)c.attachments=[];
+  openModal(`
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <h3 style="margin:0;color:#1e2a3a">📎 Attachments</h3>
+      <button onclick="closeModal()" style="background:none;border:none;cursor:pointer;font-size:18px;color:#888">✕</button>
+    </div>
+    <div style="font-size:12px;color:#888;margin-bottom:14px;padding:8px 12px;background:#f8f9fa;border-radius:6px"><b style="color:#1e2a3a">TC-${c.id}</b> · ${esc(c.title)}</div>
+    <div id="att-list">${renderAttachmentsHtml(caseId,c)}</div>
+    <div id="att-upload-progress" class="upload-progress">⏳ Uploading files, please wait…</div>
+    <div class="drop-zone" id="att-drop-zone"
+      onclick="document.getElementById('attachment-input').click()"
+      ondrop="handleAttachmentDrop(event)"
+      ondragover="event.preventDefault();this.classList.add('dz-over')"
+      ondragleave="this.classList.remove('dz-over')">
+      <div style="font-size:28px;margin-bottom:6px">📎</div>
+      <div style="font-size:13px;color:#555;font-weight:600">Click to browse or drag files here</div>
+      <div style="font-size:11px;color:#aaa;margin-top:4px">Images, PDFs, documents, archives…</div>
+    </div>
+    <div style="display:flex;justify-content:flex-end;margin-top:16px">
+      <button class="btn btn-secondary" onclick="closeModal()">Close</button>
+    </div>`);
+}
+function renderAttachmentsHtml(caseId,c){
+  const atts=c.attachments||[];
+  if(!atts.length)return'<div style="text-align:center;padding:16px 0;color:#bbb;font-size:12px">No files attached yet.</div>';
+  return atts.map(att=>`
+    <div class="att-item">
+      <span style="font-size:22px;flex-shrink:0">${getFileIcon(att.type)}</span>
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:600;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#1e2a3a">${esc(att.name)}</div>
+        <div style="font-size:11px;color:#888;margin-top:1px">${formatFileSize(att.size)} · ${att.uploadedAt}</div>
+      </div>
+      <button onclick="viewAttachment(${caseId},${att.id})" style="background:#e8f0fe;color:#1a73e8;border:none;border-radius:5px;padding:5px 10px;cursor:pointer;font-size:12px;font-weight:600">↗ View</button>
+      <button onclick="removeAttachment(${caseId},${att.id})" style="background:#fdecea;color:#c0392b;border:none;border-radius:5px;padding:5px 8px;cursor:pointer;font-size:13px">🗑</button>
+    </div>`).join('');
+}
+function handleAttachmentUpload(e){processAttachmentFiles(attachmentTargetCaseId,[...e.target.files]);e.target.value='';}
+function handleAttachmentDrop(e){e.preventDefault();e.currentTarget.classList.remove('dz-over');processAttachmentFiles(attachmentTargetCaseId,[...e.dataTransfer.files]);}
+function processAttachmentFiles(caseId,files){
+  if(!files.length||caseId==null)return;
+  const found=findCaseById(caseId);if(!found)return;
+  const{c}=found;if(!c.attachments)c.attachments=[];
+  const prog=document.getElementById('att-upload-progress');if(prog)prog.classList.add('visible');
+  uploadsInProgress+=files.length;
+  _updateSaveBtnForUpload();
+  let pending=files.length;
+  files.forEach(file=>{
+    const reader=new FileReader();
+    reader.onload=ev=>{
+      const b64=ev.target.result.split(',')[1];
+      google.script.run
+        .withSuccessHandler(function(rj){
+          const r=JSON.parse(rj);
+          c.attachments.push({id:freshId(),name:file.name,type:file.type||'application/octet-stream',size:file.size,fileId:r.fileId,viewUrl:r.viewUrl,uploadedAt:new Date().toISOString().slice(0,10)});
+          uploadsInProgress--;
+          if(--pending===0)_finishUpload(caseId,c,files.length);
+        })
+        .withFailureHandler(function(e){
+          uploadsInProgress--;
+          toast('❌ Upload failed: '+e.message,'error');
+          if(--pending===0)_finishUpload(caseId,c,files.length);
+        })
+        .uploadAttachment(b64,file.name,file.type||'application/octet-stream');
+    };
+    reader.readAsDataURL(file);
+  });
+}
+function _finishUpload(caseId,c,count){
+  const prog=document.getElementById('att-upload-progress');if(prog)prog.classList.remove('visible');
+  markDirty();
+  _updateSaveBtnForUpload();
+  const list=document.getElementById('att-list');if(list)list.innerHTML=renderAttachmentsHtml(caseId,c);
+  renderDetailPanel();
+  toast(`📎 ${count} file${count>1?'s':''} attached! Apasă 💾 Save to Sheets.`,'info');
+}
+function removeAttachment(caseId,attId){
+  const found=findCaseById(caseId);if(!found)return;
+  const{c}=found;
+  const att=(c.attachments||[]).find(a=>a.id===attId);
+  if(att?.fileId)google.script.run.deleteAttachment(att.fileId);
+  c.attachments=(c.attachments||[]).filter(a=>a.id!==attId);
+  markDirty();
+  const list=document.getElementById('att-list');if(list)list.innerHTML=renderAttachmentsHtml(caseId,c);
+  renderDetailPanel();toast('Attachment removed.','info');
+}
+function viewAttachment(caseId,attId){
+  const found=findCaseById(caseId);if(!found)return;
+  const att=(found.c.attachments||[]).find(a=>a.id===attId);if(!att)return;
+  let url=att.viewUrl;
+  if(!url&&att.fileId&&_files[att.fileId])url=_files[att.fileId];
+  if(url){
+    if(url.startsWith('data:')&&att.type.startsWith('image/')){
+      const w=window.open('','_blank');
+      w.document.write(`<html><body style="margin:0;background:#111;display:flex;align-items:center;justify-content:center;min-height:100vh"><img src="${url}" style="max-width:100%;max-height:100vh;object-fit:contain"/></body></html>`);
+      w.document.close();
+    }else if(url.startsWith('data:')){
+      const a=document.createElement('a');a.href=url;a.download=att.name;a.click();
+    }else window.open(url,'_blank');
+    return;
+  }
+  toast('⚠️ No preview available.','info');
+}
+function findCaseById(id){for(const s of suites){const c=s.cases.find(x=>x.id===id);if(c)return{suite:s,c};}return null;}
+function getFileIcon(m){if(!m)return'📄';if(m.startsWith('image/'))return'🖼️';if(m==='application/pdf')return'📕';if(m.includes('spreadsheet')||m.includes('excel')||m.includes('csv'))return'📊';if(m.includes('word')||m.includes('document'))return'📝';if(m.includes('zip')||m.includes('compress')||m.includes('archive'))return'🗜️';if(m.startsWith('video/'))return'🎬';if(m.startsWith('audio/'))return'🎵';if(m.includes('text/'))return'📃';return'📄';}
+function formatFileSize(b){if(!b)return'0 B';if(b<1024)return b+' B';if(b<1048576)return(b/1024).toFixed(1)+' KB';return(b/1048576).toFixed(1)+' MB';}
+
+// ══════════════════════════════════════════════════════════
+//  CSV
+// ══════════════════════════════════════════════════════════
+function exportCsv(){const suite=suites.find(s=>s.id===selSuiteId);if(!suite)return;const h=['id','title','type','priority','status','assignedTo','automationStatus','steps','expected'];const rows=[h.join(','),...suite.cases.map(c=>h.map(k=>csvEsc(c[k]??'')).join(','))].join('\n');dlFile(suite.name.replace(/\s+/g,'-')+'.csv',rows,'text/csv');toast('Exported '+suite.cases.length+' cases!');}
+function exportAll(){const h=['suite','id','title','type','priority','status','assignedTo','automationStatus','steps','expected'];const rows=[h.join(','),...suites.flatMap(s=>s.cases.map(c=>[s.name,...['id','title','type','priority','status','assignedTo','automationStatus','steps','expected'].map(k=>csvEsc(c[k]??''))].join(',')))].join('\n');dlFile('all-cases.csv',rows,'text/csv');toast('Exported all cases!');}
+function dlFile(name,content,type){const b=new Blob([content],{type});const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download=name;a.click();URL.revokeObjectURL(u);}
+function csvEsc(v){const s=String(v).replace(/"/g,'""');return /[",\n\r]/.test(s)?`"${s}"`:s;}
+function handleImport(e){
+  const file=e.target.files[0];if(!file)return;
+  const suite=suites.find(s=>s.id===selSuiteId);if(!suite)return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    const lines=ev.target.result.trim().split(/\r?\n/);
+    const headers=lines[0].split(',').map(h=>h.trim().replace(/^"|"$/g,''));
+    const existingTitles=new Set(suite.cases.map(c=>c.title.toLowerCase()));
+    let skipped=0;
+    const cases=lines.slice(1).map(line=>{
+      const vals=[];let cur='',inQ=false;
+      for(let i=0;i<line.length;i++){const ch=line[i];if(ch==='"'&&!inQ)inQ=true;else if(ch==='"'&&inQ&&line[i+1]==='"'){cur+='"';i++;}else if(ch==='"'&&inQ)inQ=false;else if(ch===','&&!inQ){vals.push(cur);cur='';}else cur+=ch;}
+      vals.push(cur);const o={};headers.forEach((h,i)=>o[h]=(vals[i]||'').trim());
+      if(!o.title)return null;
+      if(existingTitles.has(o.title.toLowerCase())){skipped++;return null;}
+      existingTitles.add(o.title.toLowerCase());
+      return{id:freshId(),suiteId:selSuiteId,title:o.title,type:o.type||'Functional',priority:o.priority||'Medium',status:STATUSES.includes(o.status)?o.status:'Untested',assignedTo:o.assignedTo||'',automationStatus:o.automationStatus||'Manual',steps:o.steps||'',expected:o.expected||'',attachments:[]};
+    }).filter(Boolean);
+    if(!cases.length){toast(`Import: 0 cazuri noi (${skipped} duplicate${skipped!==1?'s':''} sărite).`,'info');e.target.value='';return;}
+    suite.cases.push(...cases);
+    markDirty();renderCases();renderSidebar();
+    const msg=skipped>0?`Importat ${cases.length} cazuri (${skipped} duplicate sărite). Apasă 💾 Save.`:`Importat ${cases.length} cazuri. Apasă 💾 Save to Sheets.`;
+    toast(msg,'info');
+  };
+  reader.readAsText(file);e.target.value='';
+}
+
+// ══════════════════════════════════════════════════════════
+//  UTILS
+// ══════════════════════════════════════════════════════════
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function priDot(p){return`<span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;color:${PC[p]||'#888'}"><span style="width:8px;height:8px;border-radius:50%;background:${PC[p]||'#888'};display:inline-block"></span>${p}</span>`;}
+function toast(msg,type='success'){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.style.display='block';
+  t.style.background=type==='error'?'#fdecea':type==='info'?'#fff8e1':'#e6f4ea';
+  t.style.color=type==='error'?'#c0392b':type==='info'?'#856404':'#1e7e34';
+  t.style.border=`1px solid ${type==='error'?'#f5c6c2':type==='info'?'#ffc107':'#a8d5b5'}`;
+  setTimeout(()=>t.style.display='none',4000);
+}
+</script>
+</body>
+</html>
