@@ -4,73 +4,147 @@
 <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>TestTrack</title>
 <style>
-*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Segoe UI',Arial,sans-serif;background:#f4f5f7;min-height:100vh}
-button{cursor:pointer}pre{font-family:inherit}select{cursor:pointer}
-.topbar{background:#1e2a3a;color:#fff;padding:0 20px;display:flex;align-items:center;gap:12px;height:48px;box-shadow:0 2px 8px rgba(0,0,0,.25)}
-.logo{font-weight:800;font-size:18px;color:#4fc3f7;letter-spacing:1px;white-space:nowrap}
-.tabs{background:#253347;display:flex;padding-left:16px}
-.tab{background:transparent;color:#adb5bd;border:none;padding:10px 18px;font-size:13px;border-radius:4px 4px 0 0;transition:all .15s}
-.tab.active{background:#f4f5f7;color:#1e2a3a;font-weight:700}
-.sidebar{width:230px;background:#fff;border-right:1px solid #dde1e7;padding:12px 0;min-height:calc(100vh - 96px)}
-.suite-item{padding:8px 12px;cursor:pointer;border-left:3px solid transparent;display:flex;align-items:center;justify-content:space-between}
-.suite-item.active{background:#e8f0fe;border-left-color:#1a73e8}
-.suite-item:hover:not(.active){background:#f8f9fa}
-.main{flex:1;padding:20px;min-width:0;overflow:auto}
-.btn{border:none;border-radius:5px;padding:7px 14px;font-weight:600;font-size:12px}
-.btn-primary{background:#1a73e8;color:#fff}
-.btn-success{background:#fff;color:#27ae60;border:1px solid #27ae60}
-.btn-info{background:#fff;color:#1a73e8;border:1px solid #1a73e8}
-.btn-secondary{background:#fff;color:#666;border:1px solid #ccc}
-.btn-danger{background:#fdecea;color:#c0392b;border:none}
-.btn-sm{padding:3px 7px;font-size:11px;border-radius:3px}
-#save-btn{display:flex;align-items:center;gap:6px;border:none;border-radius:6px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;transition:all .2s;white-space:nowrap}
-#save-btn.idle  {background:#253347;color:#6b7a8d;cursor:default}
-#save-btn.dirty {background:#f59e0b;color:#fff;box-shadow:0 0 0 2px rgba(245,158,11,.4);animation:savepulse 1.5s infinite}
+:root{
+  --blue:#2563eb;--blue-h:#1d4ed8;--blue-l:#eff6ff;
+  --green:#16a34a;--green-l:#f0fdf4;
+  --red:#dc2626;--red-l:#fef2f2;
+  --amber:#d97706;--purple:#7c3aed;--cyan:#0891b2;
+  --bg:#f0f4f8;--surface:#ffffff;
+  --border:#e2e8f0;--border-h:#cbd5e1;
+  --text:#0f172a;--text2:#475569;--text3:#94a3b8;
+  --navy:#1a2535;--navy2:#22304a;--navy3:#2d3f57;
+  --r:8px;--r-sm:6px;--r-lg:14px;
+  --sh-sm:0 1px 4px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04);
+  --sh:0 4px 16px rgba(0,0,0,.08),0 2px 4px rgba(0,0,0,.04);
+  --sh-lg:0 12px 48px rgba(0,0,0,.14),0 4px 16px rgba(0,0,0,.06);
+  --topbar:58px;--tabbar:44px;--sidebar:272px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,-apple-system,Arial,sans-serif;background:var(--bg);min-height:100vh;color:var(--text);line-height:1.5;-webkit-font-smoothing:antialiased}
+button{cursor:pointer;font-family:inherit;transition:all .15s ease}
+pre{font-family:'SF Mono',Consolas,'Courier New',monospace}
+select{cursor:pointer;font-family:inherit}
+/* ── Topbar ── */
+.topbar{background:linear-gradient(135deg,var(--navy) 0%,var(--navy2) 100%);color:#fff;padding:0 28px;display:flex;align-items:center;gap:16px;height:var(--topbar);box-shadow:0 2px 16px rgba(0,0,0,.2)}
+.logo{font-weight:800;font-size:18px;color:#60c9f8;letter-spacing:.3px;white-space:nowrap}
+/* ── Tabs ── */
+.tabs{background:var(--navy2);display:flex;padding:0 12px;height:var(--tabbar);align-items:flex-end;gap:3px}
+.tab{background:transparent;color:rgba(255,255,255,.42);border:none;padding:8px 22px;font-size:13px;font-weight:500;border-radius:var(--r) var(--r) 0 0;transition:all .18s}
+.tab:hover:not(.active){background:rgba(255,255,255,.07);color:rgba(255,255,255,.8)}
+.tab.active{background:var(--bg);color:var(--navy);font-weight:700}
+/* ── Sidebar ── */
+.sidebar{width:var(--sidebar);background:var(--surface);border-right:1px solid var(--border);padding:14px 0;min-height:calc(100vh - var(--topbar) - var(--tabbar));flex-shrink:0}
+.suite-item{padding:10px 16px;cursor:pointer;border-left:3px solid transparent;display:flex;align-items:center;gap:10px;transition:background .12s}
+.suite-item.active{background:#eff6ff;border-left-color:var(--blue)}
+.suite-item:hover:not(.active){background:#f8fafc}
+.suite-item-actions{display:flex;gap:1px;opacity:0;transition:opacity .15s;flex-shrink:0}
+.suite-item:hover .suite-item-actions,.suite-item.active .suite-item-actions{opacity:1}
+.suite-icon-btn{background:none;border:none;font-size:12px;padding:3px 5px;border-radius:4px;color:var(--text3);line-height:1}
+.suite-icon-btn:hover{background:var(--border);color:var(--text)}
+/* ── Main ── */
+.main{flex:1;padding:24px;min-width:0;overflow:auto}
+/* ── Buttons ── */
+.btn{border:none;border-radius:var(--r-sm);padding:8px 16px;font-weight:600;font-size:12.5px;display:inline-flex;align-items:center;gap:5px;transition:all .15s;white-space:nowrap}
+.btn-primary{background:var(--blue);color:#fff;box-shadow:0 1px 3px rgba(37,99,235,.25)}
+.btn-primary:hover{background:var(--blue-h);box-shadow:0 4px 12px rgba(37,99,235,.4);transform:translateY(-1px)}
+.btn-primary:active{transform:translateY(0)}
+.btn-success{background:var(--surface);color:var(--green);border:1.5px solid #86efac}
+.btn-success:hover{background:var(--green-l);border-color:var(--green)}
+.btn-info{background:var(--surface);color:var(--blue);border:1.5px solid #93c5fd}
+.btn-info:hover{background:var(--blue-l);border-color:var(--blue)}
+.btn-secondary{background:var(--surface);color:var(--text2);border:1.5px solid var(--border)}
+.btn-secondary:hover{background:#f8fafc;border-color:var(--border-h);color:var(--text)}
+.btn-danger{background:var(--red-l);color:var(--red);border:none}
+.btn-danger:hover{background:#fee2e2}
+.btn-sm{padding:4px 10px;font-size:11.5px;border-radius:4px}
+/* ── Save button ── */
+#save-btn{display:flex;align-items:center;gap:7px;border:none;border-radius:var(--r);padding:8px 18px;font-size:13px;font-weight:700;cursor:pointer;transition:all .2s;white-space:nowrap}
+#save-btn.idle{background:rgba(255,255,255,.07);color:rgba(255,255,255,.3);cursor:default}
+#save-btn.dirty{background:var(--amber);color:#fff;box-shadow:0 0 0 3px rgba(217,119,6,.3);animation:savepulse 1.8s infinite}
 #save-btn.saving{background:#3b82f6;color:#fff;cursor:wait}
-#save-btn.saved {background:#22c55e;color:#fff}
-#save-btn.error {background:#ef4444;color:#fff}
-@keyframes savepulse{0%,100%{box-shadow:0 0 0 2px rgba(245,158,11,.4)}50%{box-shadow:0 0 0 5px rgba(245,158,11,.1)}}
+#save-btn.saved{background:var(--green);color:#fff}
+#save-btn.error{background:var(--red);color:#fff}
+@keyframes savepulse{0%,100%{box-shadow:0 0 0 3px rgba(217,119,6,.3)}50%{box-shadow:0 0 0 7px rgba(217,119,6,.08)}}
+/* ── Table ── */
 table{width:100%;border-collapse:collapse}
-th{padding:9px 10px;text-align:left;font-size:10px;font-weight:700;color:#495057;text-transform:uppercase;letter-spacing:.5px}
-td{padding:7px 10px;border-bottom:1px solid #eee;font-size:13px}
-tr.even{background:#fff}tr.odd{background:#fafbfc}tr.sel-row{background:#ebf3fd!important}
-tr:hover td{background:#f0f4ff}
-.badge{border-radius:4px;padding:2px 8px;font-size:11px;font-weight:600;display:inline-block}
-.chip{padding:2px 5px;border-radius:3px;font-size:11px;display:inline-block}
-.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;z-index:998}
-.modal{background:#fff;border-radius:10px;padding:28px;box-shadow:0 8px 40px rgba(0,0,0,.18);max-height:92vh;overflow-y:auto}
-.form-label{font-size:12px;font-weight:600;color:#555;display:block;margin-bottom:4px}
-.form-input{width:100%;border:1px solid #dde1e7;border-radius:5px;padding:7px 10px;font-size:13px;font-family:inherit}
-.form-input:focus{outline:none;border-color:#1a73e8}
-.progress-bar{background:#eee;border-radius:10px;height:8px;overflow:hidden}
-.progress-fill{height:100%;transition:width .3s}
-.hint{background:#fffbea;border:1px solid #ffc107;border-radius:6px;padding:7px 12px;font-size:11px;color:#856404;margin-bottom:12px}
-.bulk-bar{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1e2a3a;color:#fff;border-radius:12px;padding:12px 20px;display:flex;gap:10px;align-items:center;box-shadow:0 4px 24px rgba(0,0,0,.3);z-index:200;flex-wrap:wrap}
-.spinner{display:inline-block;width:32px;height:32px;border:3px solid #4fc3f7;border-top-color:transparent;border-radius:50%;animation:spin .6s linear infinite}
-.mode-btn{flex:1;padding:10px 6px;border:2px solid #dde1e7;border-radius:8px;cursor:pointer;background:#fff;color:#555;font-size:12px;text-align:center;transition:all .15s}
-.mode-btn.active{border-color:#1a73e8;background:#e8f0fe;color:#1a73e8;font-weight:700}
-.case-picker-row{display:flex;align-items:center;gap:10px;padding:9px 14px;cursor:pointer;border-bottom:1px solid #f0f0f0;transition:background .1s}
-.case-picker-row:hover,.case-picker-row.picked{background:#e8f0fe}
+th{padding:11px 12px;text-align:left;font-size:10.5px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.7px;background:#f8fafc;white-space:nowrap}
+td{padding:10px 12px;border-bottom:1px solid #f1f5f9;font-size:13px;vertical-align:middle}
+tr.even td{background:var(--surface)}
+tr.odd td{background:#fafbfd}
+tr.sel-row td{background:#eff6ff!important}
+tr:hover td{background:#f0f7ff}
+/* ── Badges ── */
+.badge{border-radius:20px;padding:3px 10px;font-size:11px;font-weight:600;display:inline-block}
+.chip{padding:3px 9px;border-radius:4px;font-size:11px;font-weight:500;display:inline-block}
+/* ── Modal ── */
+.modal-bg{position:fixed;inset:0;background:rgba(15,23,42,.5);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:998;padding:20px;animation:fadeIn .2s ease}
+.modal{background:var(--surface);border-radius:var(--r-lg);padding:32px;box-shadow:var(--sh-lg);max-height:92vh;overflow-y:auto;width:100%;max-width:580px}
+/* ── Forms ── */
+.form-label{font-size:12px;font-weight:600;color:var(--text2);display:block;margin-bottom:5px}
+.form-input{width:100%;border:1.5px solid var(--border);border-radius:var(--r-sm);padding:8px 12px;font-size:13px;font-family:inherit;color:var(--text);transition:border-color .15s,box-shadow .15s;background:var(--surface)}
+.form-input:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(37,99,235,.1)}
+.form-input:hover:not(:focus){border-color:var(--border-h)}
+textarea.form-input{line-height:1.6}
+/* ── Progress ── */
+.progress-bar{background:#e2e8f0;border-radius:10px;height:7px;overflow:hidden}
+.progress-fill{height:100%;transition:width .4s cubic-bezier(.4,0,.2,1);border-radius:10px}
+/* ── Hint ── */
+.hint{background:#fefce8;border:1px solid #fde68a;border-radius:var(--r);padding:9px 14px;font-size:12px;color:#78350f;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+/* ── Bulk bar ── */
+.bulk-bar{position:fixed;bottom:28px;left:50%;transform:translateX(-50%);background:var(--navy);color:#fff;border-radius:var(--r-lg);padding:12px 20px;display:flex;gap:10px;align-items:center;box-shadow:0 8px 40px rgba(0,0,0,.3);z-index:200;flex-wrap:wrap;border:1px solid var(--navy3)}
+/* ── Spinner ── */
+.spinner{display:inline-block;width:40px;height:40px;border:3px solid rgba(96,201,248,.2);border-top-color:#60c9f8;border-radius:50%;animation:spin .75s linear infinite}
+/* ── Mode buttons ── */
+.mode-btn{flex:1;padding:13px 8px;border:2px solid var(--border);border-radius:var(--r);cursor:pointer;background:var(--surface);color:var(--text2);font-size:12px;text-align:center;transition:all .15s;font-weight:500}
+.mode-btn:hover{border-color:#93c5fd;background:var(--blue-l);color:var(--blue)}
+.mode-btn.active{border-color:var(--blue);background:var(--blue-l);color:var(--blue);font-weight:700}
+/* ── Case picker ── */
+.case-picker-row{display:flex;align-items:center;gap:12px;padding:11px 16px;cursor:pointer;border-bottom:1px solid #f5f5f5;transition:background .1s}
+.case-picker-row:hover,.case-picker-row.picked{background:var(--blue-l)}
+/* ── Sortable ── */
 th.sortable{cursor:pointer;user-select:none;white-space:nowrap}
-th.sortable:hover{background:#e2e8f0!important}
-.sort-arrow{margin-left:3px;font-size:9px;color:#1a73e8;font-weight:900}
-.att-chip{background:#e8f0fe;color:#1a73e8;border-radius:10px;padding:1px 6px;font-size:10px;font-weight:700;cursor:pointer;margin-left:4px;vertical-align:middle;border:none;display:inline-block}
-.att-chip:hover{background:#c5d9f7}
-.att-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:6px;border:1px solid #eee;margin-bottom:6px;background:#fff;transition:background .1s}
-.att-item:hover{background:#f0f4ff;border-color:#93b4fb}
-.drop-zone{border:2px dashed #dde1e7;border-radius:8px;padding:22px 16px;text-align:center;cursor:pointer;transition:all .15s;margin-top:10px}
-.drop-zone:hover,.drop-zone.dz-over{border-color:#1a73e8;background:#e8f0fe}
-.field-error{color:#c0392b;font-size:11px;margin-top:3px;display:none}
+th.sortable:hover{background:#eef2f7}
+.sort-arrow{margin-left:4px;font-size:10px;color:var(--blue);font-weight:900}
+/* ── Attachments ── */
+.att-chip{background:var(--blue-l);color:var(--blue);border-radius:20px;padding:2px 9px;font-size:10px;font-weight:700;cursor:pointer;margin-left:6px;vertical-align:middle;border:none;display:inline-block}
+.att-chip:hover{background:#dbeafe}
+.att-item{display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:var(--r);border:1px solid var(--border);margin-bottom:7px;background:var(--surface);transition:all .12s}
+.att-item:hover{background:#f8fafc;border-color:#93c5fd;box-shadow:var(--sh-sm)}
+.drop-zone{border:2px dashed var(--border);border-radius:var(--r);padding:30px 20px;text-align:center;cursor:pointer;transition:all .15s;margin-top:14px}
+.drop-zone:hover,.drop-zone.dz-over{border-color:var(--blue);background:var(--blue-l)}
+/* ── Field errors ── */
+.field-error{color:var(--red);font-size:11px;margin-top:4px;display:none}
 .field-error.visible{display:block}
-.upload-progress{background:#e8f0fe;border-radius:6px;padding:8px 12px;font-size:12px;color:#1a73e8;margin-top:8px;display:none}
+.upload-progress{background:var(--blue-l);border-radius:var(--r);padding:9px 14px;font-size:12px;color:var(--blue);margin-top:10px;display:none;font-weight:500}
 .upload-progress.visible{display:block}
-/* ── Move modal suite card ── */
+/* ── Move modal ── */
 .move-suite-card{display:flex;align-items:center;gap:14px;padding:13px 16px;cursor:pointer;border-bottom:1px solid #f0f0f0;transition:background .12s}
 .move-suite-card:last-child{border-bottom:none}
-.move-suite-card:hover{background:#f0f4ff}
-.move-suite-card input[type=radio]{width:16px;height:16px;accent-color:#1a73e8;cursor:pointer;flex-shrink:0}
-.move-suite-card.selected{background:#e8f0fe}
+.move-suite-card:hover{background:#f8fafc}
+.move-suite-card input[type=radio]{width:16px;height:16px;accent-color:var(--blue);cursor:pointer;flex-shrink:0}
+.move-suite-card.selected{background:var(--blue-l)}
+/* ── Cards ── */
+.run-card{background:var(--surface);border-radius:var(--r-lg);border:1px solid var(--border);padding:20px;cursor:pointer;transition:box-shadow .18s,transform .18s;box-shadow:var(--sh-sm)}
+.run-card:hover{box-shadow:var(--sh);transform:translateY(-2px)}
+.plan-card{background:var(--surface);border-radius:var(--r-lg);border:1px solid var(--border);padding:20px;box-shadow:var(--sh-sm);transition:box-shadow .15s}
+.plan-card:hover{box-shadow:var(--sh)}
+.stat-card{background:var(--surface);border-radius:var(--r-lg);padding:22px 28px;border:1px solid var(--border);box-shadow:var(--sh-sm);min-width:110px;text-align:center;transition:box-shadow .15s,transform .15s}
+.stat-card:hover{box-shadow:var(--sh);transform:translateY(-2px)}
+/* ── Toast ── */
+#toast{position:fixed;bottom:28px;right:28px;z-index:9999;border-radius:var(--r);padding:12px 22px;font-weight:600;font-size:13px;box-shadow:var(--sh-lg);max-width:380px}
+/* ── Global search ── */
+#global-search-input{border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.07);color:#e2e8f0;border-radius:var(--r);padding:7px 14px;font-size:13px;outline:none;transition:all .2s;width:240px}
+#global-search-input::placeholder{color:rgba(255,255,255,.28)}
+#global-search-input:focus{border-color:#60c9f8;background:rgba(255,255,255,.11);box-shadow:0 0 0 3px rgba(96,201,248,.15)}
+/* ── Dirty banner ── */
+#dirty-banner{background:#fffbeb;border-bottom:2px solid #fcd34d;padding:9px 28px;font-size:12.5px;color:#78350f}
+/* ── Scrollbars ── */
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:10px}
+::-webkit-scrollbar-thumb:hover{background:#94a3b8}
 @keyframes spin{to{transform:rotate(360deg)}}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 </style>
 </head>
 <body>
@@ -79,59 +153,58 @@ th.sortable:hover{background:#e2e8f0!important}
     <div class="logo">🧪 TestTrack</div>
     <div style="flex:1"></div>
     <div style="position:relative" id="global-search-wrap">
-      <input id="global-search-input" placeholder="🔍 Search all cases…" oninput="globalSearch(this.value)" style="border:1px solid #3a4d63;background:#253347;color:#fff;border-radius:5px;padding:5px 12px;font-size:12px;width:200px;outline:none" onfocus="if(this.value)globalSearch(this.value)"/>
-      <div id="global-search-results" style="display:none;position:absolute;top:34px;right:0;background:#fff;border-radius:6px;border:1px solid #dde1e7;box-shadow:0 4px 20px rgba(0,0,0,.15);min-width:380px;max-height:320px;overflow-y:auto;z-index:500"></div>
+      <input id="global-search-input" placeholder="🔍 Search all cases…" oninput="globalSearch(this.value)" onfocus="if(this.value)globalSearch(this.value)"/>
+      <div id="global-search-results" style="display:none;position:absolute;top:42px;right:0;background:#fff;border-radius:var(--r);border:1px solid var(--border);box-shadow:var(--sh-lg);min-width:420px;max-height:340px;overflow-y:auto;z-index:500"></div>
     </div>
     <button id="save-btn" class="idle" onclick="saveNow()" title="Save all changes to Google Sheets">
       <span id="save-icon">💾</span>
       <span id="save-label">Saved</span>
     </button>
-    <span style="font-size:12px;color:#adb5bd">Backend: <b style="color:#fff">Google Sheets</b></span>
   </div>
-  <div id="dirty-banner" style="display:none;background:#fef3c7;border-bottom:2px solid #f59e0b;padding:7px 20px;font-size:12px;color:#92400e;align-items:center;gap:10px">
+  <div id="dirty-banner" style="display:none;align-items:center;gap:10px">
     ⚠️ <b>You have unsaved changes.</b> Click <b>💾 Save to Sheets</b> before refreshing.
-    <button onclick="saveNow()" style="background:#f59e0b;color:#fff;border:none;border-radius:4px;padding:3px 10px;font-weight:700;cursor:pointer;font-size:12px">Save now</button>
+    <button onclick="saveNow()" style="background:var(--amber);color:#fff;border:none;border-radius:4px;padding:3px 10px;font-weight:700;cursor:pointer;font-size:12px">Save now</button>
   </div>
   <div class="tabs" id="tab-bar">
     <button class="tab active" onclick="switchTab('suites')">📁 Suites &amp; Cases</button>
-    <button class="tab" onclick="switchTab('runs')">🚀 Test Runs <span id="runs-badge" style="display:none;background:#1a73e8;color:#fff;border-radius:10px;padding:1px 6px;font-size:10px;margin-left:4px"></span></button>
+    <button class="tab" onclick="switchTab('runs')">🚀 Test Runs <span id="runs-badge" style="display:none;background:var(--blue);color:#fff;border-radius:10px;padding:1px 7px;font-size:10px;margin-left:4px"></span></button>
     <button class="tab" onclick="switchTab('plans')">📋 Test Plans</button>
     <button class="tab" onclick="switchTab('overview')">📊 Overview</button>
   </div>
-  <div id="loading" style="display:flex;align-items:center;justify-content:center;height:calc(100vh - 96px);flex-direction:column;gap:12px">
-    <div class="spinner"></div><span style="color:#555;font-size:14px">Loading data...</span>
+  <div id="loading" style="display:flex;align-items:center;justify-content:center;height:calc(100vh - var(--topbar) - var(--tabbar));flex-direction:column;gap:16px">
+    <div class="spinner"></div><span style="color:var(--text2);font-size:14px;font-weight:500">Loading data…</span>
   </div>
   <div id="tab-suites" style="display:none;flex:1">
-    <div style="display:flex;height:calc(100vh - 96px)">
+    <div style="display:flex;height:calc(100vh - var(--topbar) - var(--tabbar))">
       <div class="sidebar">
-        <div style="padding:0 12px 8px;display:flex;justify-content:space-between;align-items:center">
-          <span style="font-weight:700;color:#1e2a3a;font-size:12px;text-transform:uppercase">Test Suites</span>
-          <button class="btn btn-primary" style="padding:3px 8px;font-size:11px" onclick="openSuiteModal()">+ Add</button>
+        <div style="padding:0 16px 10px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);margin-bottom:8px">
+          <span style="font-weight:700;color:var(--text2);font-size:11px;text-transform:uppercase;letter-spacing:.6px">Test Suites</span>
+          <button class="btn btn-primary" style="padding:4px 10px;font-size:11px" onclick="openSuiteModal()">+ Suite</button>
         </div>
         <div id="suite-list"></div>
       </div>
-      <div class="main" id="cases-main"><div style="color:#aaa;text-align:center;margin-top:60px">← Select a suite</div></div>
-      <div id="detail-panel" style="display:none;width:300px;background:#fff;border-left:1px solid #dde1e7;padding:16px;overflow-y:auto"></div>
+      <div class="main" id="cases-main"><div style="color:var(--text3);text-align:center;margin-top:80px;font-size:14px">← Select a suite to get started</div></div>
+      <div id="detail-panel" style="display:none;width:320px;background:var(--surface);border-left:1px solid var(--border);padding:20px;overflow-y:auto;flex-shrink:0"></div>
     </div>
   </div>
-  <div id="tab-runs" style="display:none;padding:24px">
+  <div id="tab-runs" style="display:none;padding:28px">
     <div id="runs-list-view"></div>
     <div id="run-detail-view" style="display:none"></div>
   </div>
-  <div id="tab-plans" style="display:none;padding:24px">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-      <h2 style="color:#1e2a3a">📋 Test Plans</h2>
+  <div id="tab-plans" style="display:none;padding:28px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+      <h2 style="color:var(--navy);font-size:20px;font-weight:700">📋 Test Plans</h2>
       <button class="btn btn-primary" onclick="openPlanModal()">+ New Plan</button>
     </div>
     <div id="plans-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:16px"></div>
   </div>
-  <div id="tab-overview" style="display:none;padding:24px">
-    <h2 style="color:#1e2a3a;margin-bottom:20px">📊 Project Overview</h2>
-    <div id="overview-stats" style="display:flex;gap:14px;margin-bottom:24px;flex-wrap:wrap"></div>
-    <div id="overview-suites" style="display:grid;grid-template-columns:1fr 1fr;gap:14px"></div>
+  <div id="tab-overview" style="display:none;padding:28px">
+    <h2 style="color:var(--navy);margin-bottom:24px;font-size:20px;font-weight:700">📊 Project Overview</h2>
+    <div id="overview-stats" style="display:flex;gap:14px;margin-bottom:28px;flex-wrap:wrap"></div>
+    <div id="overview-suites" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px"></div>
   </div>
 </div>
-<div id="toast" style="display:none;position:fixed;bottom:24px;right:24px;z-index:9999;border-radius:8px;padding:10px 20px;font-weight:600;font-size:13px;box-shadow:0 4px 20px rgba(0,0,0,.12)"></div>
+<div id="toast" style="display:none"></div>
 <div id="modal-bg" class="modal-bg" style="display:none" onclick="if(event.target===this)closeModal()">
   <div id="modal-content" class="modal"></div>
 </div>
@@ -395,11 +468,13 @@ function renderAll(){renderSidebar();renderCases();}
 function renderSidebar(){
   document.getElementById('suite-list').innerHTML=suites.map(s=>`
     <div class="suite-item ${s.id===selSuiteId?'active':''}" onclick="selectSuite(${s.id})">
-      <div><div style="font-weight:600;font-size:13px;color:${s.id===selSuiteId?'#1a73e8':'#2d3748'}">📁 ${esc(s.name)}</div>
-      <div style="font-size:11px;color:#888">${s.cases.length} cases</div></div>
-      <div style="display:flex;gap:2px">
-        <button onclick="event.stopPropagation();openSuiteModal(${s.id})" style="background:none;border:none;font-size:12px">✏️</button>
-        <button onclick="event.stopPropagation();deleteSuite(${s.id})" style="background:none;border:none;font-size:12px">🗑️</button>
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:600;font-size:13px;color:${s.id===selSuiteId?'var(--blue)':'var(--text)'}">📁 ${esc(s.name)}</div>
+        <div style="font-size:11px;color:var(--text3)">${s.cases.length} case${s.cases.length!==1?'s':''}</div>
+      </div>
+      <div class="suite-item-actions">
+        <button class="suite-icon-btn" onclick="event.stopPropagation();openSuiteModal(${s.id})" title="Edit suite">✏️</button>
+        <button class="suite-icon-btn" onclick="event.stopPropagation();deleteSuite(${s.id})" title="Delete suite">🗑️</button>
       </div>
     </div>`).join('');
 }
@@ -421,13 +496,13 @@ function sortCasesArr(arr){
 function renderCases(){
   const suite=suites.find(s=>s.id===selSuiteId);
   const main=document.getElementById('cases-main');
-  if(!suite){main.innerHTML='<div style="color:#aaa;text-align:center;margin-top:60px">← Select a suite</div>';return;}
+  if(!suite){main.innerHTML='<div style="color:var(--text3);text-align:center;margin-top:60px;font-size:14px">← Select a suite to get started</div>';return;}
   const filtered=suite.cases.filter(c=>(filterSt==='All'||c.status===filterSt)&&c.title.toLowerCase().includes(searchVal.toLowerCase()));
   const sorted=sortCasesArr(filtered);
   const allChecked=selIds.size===filtered.length&&filtered.length>0;
   main.innerHTML=`
-    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px;gap:12px;flex-wrap:wrap">
-      <div><h2 style="color:#1e2a3a;font-size:17px">📁 ${esc(suite.name)}</h2><p style="color:#666;font-size:12px;margin-top:2px">${esc(suite.description||'')}</p></div>
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px;gap:12px;flex-wrap:wrap">
+      <div><h2 style="color:var(--navy);font-size:18px;font-weight:700">📁 ${esc(suite.name)}</h2><p style="color:var(--text2);font-size:12px;margin-top:3px">${esc(suite.description||'')}</p></div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <button class="btn btn-info"      onclick="document.getElementById('import-input').click()">⬆️ Import</button>
         <button class="btn btn-success"   onclick="exportCsv()">⬇️ Export</button>
@@ -436,40 +511,40 @@ function renderCases(){
       </div>
     </div>
     <div class="hint">💡 CSV format: <code>title, type, priority, status, assignedTo, automationStatus, steps, expected</code></div>
-    <div style="display:flex;gap:8px;margin-bottom:12px;align-items:center;background:#fff;padding:8px 12px;border-radius:6px;border:1px solid #dde1e7;flex-wrap:wrap">
-      <input placeholder="🔍 Search cases..." value="${esc(searchVal)}" oninput="searchVal=this.value;renderCases()" style="border:1px solid #dde1e7;border-radius:4px;padding:5px 10px;font-size:12px;width:180px"/>
-      <select onchange="filterSt=this.value;renderCases()" style="border:1px solid #dde1e7;border-radius:4px;padding:5px 8px;font-size:12px">
+    <div style="display:flex;gap:8px;margin-bottom:14px;align-items:center;background:var(--surface);padding:10px 14px;border-radius:var(--r);border:1px solid var(--border);box-shadow:var(--sh-sm);flex-wrap:wrap">
+      <input placeholder="🔍 Search cases..." value="${esc(searchVal)}" oninput="searchVal=this.value;renderCases()" class="form-input" style="width:180px"/>
+      <select onchange="filterSt=this.value;renderCases()" class="form-input" style="width:auto">
         <option value="All" ${filterSt==='All'?'selected':''}>All statuses</option>
         ${STATUSES.map(s=>`<option value="${s}" ${filterSt===s?'selected':''}>${s}</option>`).join('')}
       </select>
-      <span style="margin-left:auto;font-size:11px;color:#888">${selIds.size>0?`<b style="color:#1a73e8">${selIds.size} selected · </b>`:''} ${filtered.length} cases</span>
+      <span style="margin-left:auto;font-size:11px;color:var(--text2)">${selIds.size>0?`<b style="color:var(--blue)">${selIds.size} selected · </b>`:''} ${filtered.length} case${filtered.length!==1?'s':''}</span>
     </div>
-    <div style="background:#fff;border-radius:6px;border:1px solid #dde1e7;overflow:hidden">
+    <div style="background:var(--surface);border-radius:var(--r);border:1px solid var(--border);overflow:hidden;box-shadow:var(--sh-sm)">
       <table>
-        <thead><tr style="background:#f8f9fa;border-bottom:2px solid #dde1e7">
+        <thead><tr style="background:#f8fafc;border-bottom:2px solid var(--border)">
           <th style="padding:9px 12px;width:36px"><input type="checkbox" ${allChecked?'checked':''} onchange="toggleAll(this.checked)"/></th>
           ${sTh('ID','id')}${sTh('Title','title')}${sTh('Type','type')}${sTh('Priority','priority')}${sTh('Status','status')}${sTh('Assigned To','assignedTo')}${sTh('Automation','automationStatus')}
           <th>Actions</th>
         </tr></thead>
         <tbody>
-          ${sorted.length===0?`<tr><td colspan="9" style="text-align:center;padding:30px;color:#aaa">No test cases found</td></tr>`:
+          ${sorted.length===0?`<tr><td colspan="9" style="text-align:center;padding:48px;color:var(--text3)"><div style="font-size:32px;margin-bottom:8px">📋</div><div>No test cases found</div></td></tr>`:
           sorted.map((c,i)=>{
             const attCount=(c.attachments||[]).length;
             return`<tr class="${selIds.has(c.id)?'sel-row':i%2===0?'even':'odd'}" onclick="selectCase(${c.id})" style="cursor:pointer">
               <td style="padding:7px 12px" onclick="event.stopPropagation();toggleCase(${c.id})"><input type="checkbox" ${selIds.has(c.id)?'checked':''} style="cursor:pointer"/></td>
-              <td style="font-size:10px;color:#888">TC-${c.id}</td>
-              <td style="font-weight:500;color:#1e2a3a;max-width:180px">${esc(c.title)}${attCount>0?`<button class="att-chip" onclick="event.stopPropagation();openAttachmentsModal(${c.id})">📎 ${attCount}</button>`:''}</td>
-              <td><span class="chip" style="background:#f0f0f0">${esc(c.type)}</span></td>
+              <td style="font-size:10px;color:var(--text3)">TC-${c.id}</td>
+              <td style="font-weight:500;color:var(--text);max-width:180px">${esc(c.title)}${attCount>0?`<button class="att-chip" onclick="event.stopPropagation();openAttachmentsModal(${c.id})">📎 ${attCount}</button>`:''}</td>
+              <td><span class="chip" style="background:var(--border);color:var(--text2)">${esc(c.type)}</span></td>
               <td>${priDot(c.priority)}</td>
-              <td><select onchange="updateStatus(${c.id},this.value)" onclick="event.stopPropagation()" style="border:none;background:transparent;font-size:11px;font-weight:600;color:${SC[c.status]?.text||'#666'}">
+              <td><select onchange="updateStatus(${c.id},this.value)" onclick="event.stopPropagation()" style="border:none;background:transparent;font-size:11px;font-weight:600;color:${SC[c.status]?.text||'var(--text2)'}">
                 ${STATUSES.map(s=>`<option value="${s}" ${c.status===s?'selected':''}>${s}</option>`).join('')}
               </select></td>
-              <td style="font-size:12px;color:#555">${esc(c.assignedTo)||'<span style="color:#ccc">—</span>'}</td>
-              <td><span class="chip" style="background:${c.automationStatus==='Automated'?'#e6f4ea':'#f1f3f5'};color:${c.automationStatus==='Automated'?'#1e7e34':'#666'}">${esc(c.automationStatus)}</span></td>
+              <td style="font-size:12px;color:var(--text2)">${esc(c.assignedTo)||'<span style="color:var(--text3)">—</span>'}</td>
+              <td><span class="chip" style="background:${c.automationStatus==='Automated'?'var(--green-l)':'var(--border)'};color:${c.automationStatus==='Automated'?'var(--green)':'var(--text2)'}">${esc(c.automationStatus)}</span></td>
               <td style="white-space:nowrap">
-                <button class="btn btn-sm" style="background:#e8f0fe;color:#1a73e8;border:none" onclick="event.stopPropagation();openCaseModal(${c.id})">Edit</button>
-                <button class="btn btn-sm" style="background:#fff3e0;color:#e67e22;border:none;margin-left:2px" onclick="event.stopPropagation();openMoveCaseModal(${c.id})" title="Move to another suite">📦</button>
-                <button class="btn btn-sm" style="background:#f3e8ff;color:#7e22ce;border:none;margin-left:2px" onclick="event.stopPropagation();duplicateCase(${c.id})">Dup</button>
+                <button class="btn btn-sm btn-info" onclick="event.stopPropagation();openCaseModal(${c.id})">Edit</button>
+                <button class="btn btn-sm btn-secondary" style="margin-left:2px" onclick="event.stopPropagation();openMoveCaseModal(${c.id})" title="Move to another suite">📦</button>
+                <button class="btn btn-sm btn-secondary" style="margin-left:2px;color:var(--purple)" onclick="event.stopPropagation();duplicateCase(${c.id})">Dup</button>
                 <button class="btn btn-sm btn-danger" onclick="event.stopPropagation();deleteCase(${c.id})" style="margin-left:2px">Del</button>
               </td>
             </tr>`;
@@ -622,25 +697,25 @@ function renderRunsList(){
   document.getElementById('run-detail-view').style.display='none';
   document.getElementById('runs-list-view').style.display='block';
   const el=document.getElementById('runs-list-view');
-  if(!runs.length){el.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px"><h2 style="color:#1e2a3a">🚀 Test Runs</h2><button class="btn btn-primary" onclick="openRunModal()">+ New Run</button></div><div style="text-align:center;padding:60px;color:#aaa"><div style="font-size:48px;margin-bottom:12px">🚀</div><div>No test runs yet.</div></div>`;return;}
+  if(!runs.length){el.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px"><h2 style="color:var(--navy);font-size:20px;font-weight:700">🚀 Test Runs</h2><button class="btn btn-primary" onclick="openRunModal()">+ New Run</button></div><div style="text-align:center;padding:80px 40px;color:var(--text3)"><div style="font-size:56px;margin-bottom:16px">🚀</div><div style="font-size:15px;font-weight:600;margin-bottom:6px">No test runs yet</div><div style="font-size:13px">Create a run to start tracking test execution</div></div>`;return;}
   el.innerHTML=`
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px"><h2 style="color:#1e2a3a">🚀 Test Runs</h2><button class="btn btn-primary" onclick="openRunModal()">+ New Run</button></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px"><h2 style="color:var(--navy);font-size:20px;font-weight:700">🚀 Test Runs</h2><button class="btn btn-primary" onclick="openRunModal()">+ New Run</button></div>
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:16px">
     ${runs.map(run=>{
       const ps=STATUSES.reduce((a,s)=>({...a,[s]:run.cases.filter(c=>c.status===s).length}),{});
       const pct=run.cases.length?Math.round((ps.Passed||0)/run.cases.length*100):0;
-      return`<div onclick="openRunDetail(${run.id})" style="background:#fff;border-radius:8px;border:1px solid #dde1e7;padding:16px;cursor:pointer">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
-          <div><div style="font-weight:700;color:#1e2a3a;font-size:15px">🚀 ${esc(run.name)}</div><div style="font-size:11px;color:#888;margin-top:2px">📁 ${esc(run.suiteName)} · ${run.createdAt}</div></div>
-          <div style="display:flex;gap:4px">
-            <button onclick="event.stopPropagation();duplicateRun(${run.id})" style="background:none;border:none;font-size:14px;cursor:pointer">📋</button>
-            <button onclick="event.stopPropagation();deleteRun(${run.id})" style="background:none;border:none;font-size:14px;color:#c0392b;cursor:pointer">🗑️</button>
+      return`<div class="run-card" onclick="openRunDetail(${run.id})">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
+          <div><div style="font-weight:700;color:var(--text);font-size:15px">🚀 ${esc(run.name)}</div><div style="font-size:11px;color:var(--text3);margin-top:3px">📁 ${esc(run.suiteName)} · ${run.createdAt}</div></div>
+          <div style="display:flex;gap:2px">
+            <button class="suite-icon-btn" onclick="event.stopPropagation();duplicateRun(${run.id})" title="Duplicate run">📋</button>
+            <button class="suite-icon-btn" onclick="event.stopPropagation();deleteRun(${run.id})" title="Delete run" style="color:var(--red)">🗑️</button>
           </div>
         </div>
-        ${run.description?`<div style="font-size:12px;color:#666;margin-bottom:8px">${esc(run.description)}</div>`:''}
-        <div style="margin-bottom:10px">
-          <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px"><span style="color:#666">${run.cases.length} cases</span><span style="font-weight:700;color:${pct===100?'#1e7e34':'#1a73e8'}">${pct}% passed</span></div>
-          <div class="progress-bar"><div class="progress-fill" style="width:${pct}%;background:${pct===100?'#27ae60':'#1a73e8'}"></div></div>
+        ${run.description?`<div style="font-size:12px;color:var(--text2);margin-bottom:10px">${esc(run.description)}</div>`:''}
+        <div style="margin-bottom:12px">
+          <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:5px"><span style="color:var(--text2)">${run.cases.length} cases</span><span style="font-weight:700;color:${pct===100?'var(--green)':'var(--blue)'}">${pct}% passed</span></div>
+          <div class="progress-bar"><div class="progress-fill" style="width:${pct}%;background:${pct===100?'var(--green)':'var(--blue)'}"></div></div>
         </div>
         <div style="display:flex;gap:6px;flex-wrap:wrap">${STATUSES.filter(s=>ps[s]>0).map(s=>`<span class="badge" style="background:${SC[s].bg};color:${SC[s].text};border:1px solid ${SC[s].border}">${ps[s]} ${s}</span>`).join('')}</div>
       </div>`;
@@ -657,30 +732,30 @@ function renderRunDetail(){
   document.getElementById('run-detail-view').innerHTML=`
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap">
       <button class="btn btn-secondary" onclick="backToRuns()">← All Runs</button>
-      <div style="flex:1"><h2 style="color:#1e2a3a;margin:0">🚀 ${esc(run.name)}</h2><span style="font-size:12px;color:#888">📁 ${esc(run.suiteName)} · ${run.createdAt} · ${run.cases.length} cases</span></div>
+      <div style="flex:1"><h2 style="color:var(--navy);margin:0;font-size:20px;font-weight:700">🚀 ${esc(run.name)}</h2><span style="font-size:12px;color:var(--text2)">📁 ${esc(run.suiteName)} · ${run.createdAt} · ${run.cases.length} cases</span></div>
       <button class="btn btn-info" onclick="openAddCasesToRunModal(${run.id})">+ Add Cases</button>
       <button class="btn btn-danger" onclick="deleteRun(${run.id})">🗑️ Delete Run</button>
     </div>
-    <div style="background:#fff;border-radius:8px;border:1px solid #dde1e7;padding:16px;margin-bottom:16px;display:flex;gap:20px;align-items:center;flex-wrap:wrap">
+    <div style="background:var(--surface);border-radius:var(--r-lg);border:1px solid var(--border);padding:20px;margin-bottom:16px;display:flex;gap:20px;align-items:center;flex-wrap:wrap;box-shadow:var(--sh-sm)">
       <div style="flex:1;min-width:200px">
-        <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px"><span style="color:#666;font-weight:600">Overall Progress</span><span style="font-weight:800;color:${pct===100?'#1e7e34':'#1a73e8'};font-size:16px">${pct}%</span></div>
-        <div class="progress-bar" style="height:10px"><div class="progress-fill" style="width:${pct}%;background:${pct===100?'#27ae60':'#1a73e8'}"></div></div>
+        <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px"><span style="color:var(--text2);font-weight:600">Overall Progress</span><span style="font-weight:800;color:${pct===100?'var(--green)':'var(--blue)'};font-size:18px">${pct}%</span></div>
+        <div class="progress-bar" style="height:10px"><div class="progress-fill" style="width:${pct}%;background:${pct===100?'var(--green)':'var(--blue)'}"></div></div>
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">${STATUSES.filter(s=>ps[s]>0).map(s=>`<span class="badge" style="background:${SC[s].bg};color:${SC[s].text};border:1px solid ${SC[s].border}">${ps[s]} ${s}</span>`).join('')}</div>
     </div>
-    <div style="background:#fff;border-radius:6px;border:1px solid #dde1e7;overflow:hidden">
-      <div style="padding:10px 16px;border-bottom:1px solid #dde1e7;display:flex;justify-content:space-between;align-items:center;background:#f8f9fa;flex-wrap:wrap;gap:8px">
-        <span style="font-weight:700;font-size:13px;color:#1e2a3a">Test Cases in Run</span>
+    <div style="background:var(--surface);border-radius:var(--r);border:1px solid var(--border);overflow:hidden;box-shadow:var(--sh-sm)">
+      <div style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;background:#f8fafc;flex-wrap:wrap;gap:8px">
+        <span style="font-weight:700;font-size:13px;color:var(--text)">Test Cases in Run</span>
         <div style="display:${runSelIds.size>0?'flex':'none'};gap:8px;align-items:center">
-          <span style="font-size:12px;font-weight:600">${runSelIds.size} selected</span>
-          <select onchange="if(this.value){bulkRunStatus(${run.id},this.value);this.value=''}" style="border:1px solid #dde1e7;border-radius:4px;padding:4px 8px;font-size:12px">
+          <span style="font-size:12px;font-weight:600;color:var(--blue)">${runSelIds.size} selected</span>
+          <select onchange="if(this.value){bulkRunStatus(${run.id},this.value);this.value=''}" class="form-input" style="width:auto;padding:4px 8px;font-size:12px">
             <option value="">Change Status…</option>${STATUSES.map(s=>`<option>${s}</option>`).join('')}
           </select>
-          <button onclick="runSelIds=new Set();renderRunDetail()" style="background:none;border:none;cursor:pointer;font-size:13px;color:#888">✕</button>
+          <button onclick="runSelIds=new Set();renderRunDetail()" style="background:none;border:none;cursor:pointer;font-size:13px;color:var(--text3)">✕</button>
         </div>
       </div>
       <table>
-        <thead><tr style="background:#f8f9fa;border-bottom:2px solid #dde1e7">
+        <thead><tr style="background:#f8fafc;border-bottom:2px solid var(--border)">
           <th style="padding:9px 12px;width:36px"><input type="checkbox" ${allChecked?'checked':''} onchange="toggleAllRun(${run.id},this.checked)"/></th>
           ${runSTh('ID','id')}${runSTh('Title','title')}${runSTh('Type','type')}${runSTh('Priority','priority')}${runSTh('Status','status')}${runSTh('Assigned To','assignedTo')}<th>Steps</th>
         </tr></thead>
@@ -688,15 +763,15 @@ function renderRunDetail(){
           ${sortRunCases(run.cases).map((c,i)=>`
             <tr class="${runSelIds.has(c.id)?'sel-row':i%2===0?'even':'odd'}">
               <td style="padding:7px 12px" onclick="toggleRunCase(${c.id})"><input type="checkbox" ${runSelIds.has(c.id)?'checked':''}/></td>
-              <td style="font-size:10px;color:#888">TC-${c.originalId}</td>
-              <td style="font-weight:500;color:#1e2a3a;max-width:220px">${esc(c.title)}</td>
-              <td><span class="chip" style="background:#f0f0f0">${esc(c.type)}</span></td>
+              <td style="font-size:10px;color:var(--text3)">TC-${c.originalId}</td>
+              <td style="font-weight:500;color:var(--text);max-width:220px">${esc(c.title)}</td>
+              <td><span class="chip" style="background:var(--border);color:var(--text2)">${esc(c.type)}</span></td>
               <td>${priDot(c.priority)}</td>
-              <td><select onchange="updateRunCaseStatus(${run.id},${c.id},this.value)" style="border:1px solid ${SC[c.status]?.border||'#dde1e7'};background:${SC[c.status]?.bg||'#f1f3f5'};color:${SC[c.status]?.text||'#555'};border-radius:4px;padding:3px 8px;font-weight:600;font-size:11px">
+              <td><select onchange="updateRunCaseStatus(${run.id},${c.id},this.value)" style="border:1px solid ${SC[c.status]?.border||'var(--border)'};background:${SC[c.status]?.bg||'var(--border)'};color:${SC[c.status]?.text||'var(--text2)'};border-radius:var(--r-sm);padding:3px 8px;font-weight:600;font-size:11px">
                 ${STATUSES.map(s=>`<option value="${s}" ${c.status===s?'selected':''}>${s}</option>`).join('')}
               </select></td>
-              <td style="font-size:12px;color:#555">${esc(c.assignedTo)||'<span style="color:#ccc">—</span>'}</td>
-              <td>${c.steps?`<button onclick="showRunCaseDetail(${run.id},${c.id})" style="background:${runDetailSelCase===c.id?'#1a73e8':'#f1f3f5'};color:${runDetailSelCase===c.id?'#fff':'#555'};border:none;border-radius:3px;padding:3px 7px;cursor:pointer;font-size:11px">Steps</button>`:'—'}</td>
+              <td style="font-size:12px;color:var(--text2)">${esc(c.assignedTo)||'<span style="color:var(--text3)">—</span>'}</td>
+              <td>${c.steps?`<button onclick="showRunCaseDetail(${run.id},${c.id})" class="btn btn-sm ${runDetailSelCase===c.id?'btn-primary':'btn-secondary'}">Steps</button>`:'—'}</td>
             </tr>`).join('')}
         </tbody>
       </table>
@@ -705,15 +780,15 @@ function renderRunDetail(){
 }
 function renderRunCasePanel(run){
   const c=run.cases.find(x=>x.id===runDetailSelCase);if(!c)return'';
-  return`<div style="position:fixed;right:0;top:96px;bottom:0;width:300px;background:#fff;border-left:2px solid #1a73e8;padding:16px;overflow-y:auto;z-index:50;box-shadow:-4px 0 16px rgba(0,0,0,.06)">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-      <span style="font-weight:700;color:#1e2a3a;font-size:13px">Test Steps</span>
-      <button onclick="runDetailSelCase=null;renderRunDetail()" style="background:none;border:none;cursor:pointer;font-size:16px;color:#888">✕</button>
+  return`<div style="position:fixed;right:0;top:96px;bottom:0;width:300px;background:var(--surface);border-left:2px solid var(--blue);padding:20px;overflow-y:auto;z-index:50;box-shadow:var(--sh-lg)">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <span style="font-weight:700;color:var(--text);font-size:13px">Test Steps</span>
+      <button onclick="runDetailSelCase=null;renderRunDetail()" style="background:none;border:none;cursor:pointer;font-size:16px;color:var(--text3)">✕</button>
     </div>
-    <div style="font-size:10px;color:#888;margin-bottom:4px">TC-${c.originalId}</div>
-    <div style="font-weight:700;font-size:14px;color:#1e2a3a;margin-bottom:12px">${esc(c.title)}</div>
-    ${c.steps?`<div style="font-weight:700;font-size:10px;color:#495057;text-transform:uppercase;margin-bottom:4px">Steps</div><pre style="background:#f8f9fa;border-radius:4px;padding:8px;font-size:11px;white-space:pre-wrap;color:#333;margin-bottom:12px">${esc(c.steps)}</pre>`:''}
-    ${c.expected?`<div style="font-weight:700;font-size:10px;color:#495057;text-transform:uppercase;margin-bottom:4px">Expected</div><pre style="background:#e6f4ea;border-radius:4px;padding:8px;font-size:11px;white-space:pre-wrap;color:#1e7e34">${esc(c.expected)}</pre>`:''}
+    <div style="font-size:10px;color:var(--text3);margin-bottom:4px">TC-${c.originalId}</div>
+    <div style="font-weight:700;font-size:14px;color:var(--text);margin-bottom:14px">${esc(c.title)}</div>
+    ${c.steps?`<div style="font-weight:700;font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Steps</div><pre style="background:#f8fafc;border-radius:var(--r-sm);padding:10px;font-size:11px;white-space:pre-wrap;color:var(--text);margin-bottom:14px;border:1px solid var(--border)">${esc(c.steps)}</pre>`:''}
+    ${c.expected?`<div style="font-weight:700;font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Expected</div><pre style="background:var(--green-l);border-radius:var(--r-sm);padding:10px;font-size:11px;white-space:pre-wrap;color:var(--green);border:1px solid #86efac">${esc(c.expected)}</pre>`:''}
   </div>`;
 }
 function showRunCaseDetail(runId,caseId){runDetailSelCase=runDetailSelCase===caseId?null:caseId;renderRunDetail();}
@@ -764,24 +839,41 @@ function renderDetailPanel(){
 // ══════════════════════════════════════════════════════════
 function renderPlans(){
   const el=document.getElementById('plans-grid');
-  if(!plans.length){el.innerHTML='<div style="color:#aaa;padding:40px;text-align:center">No test plans yet.</div>';return;}
+  if(!plans.length){el.innerHTML='<div style="text-align:center;padding:80px 40px;color:var(--text3)"><div style="font-size:56px;margin-bottom:16px">📋</div><div style="font-size:15px;font-weight:600;margin-bottom:6px">No test plans yet</div><div style="font-size:13px">Create a plan to group suites for targeted testing</div></div>';return;}
   el.innerHTML=plans.map(plan=>{
     const cases=suites.filter(s=>(plan.selectedSuites||[]).includes(s.id)).flatMap(s=>s.cases);
     const ps=STATUSES.reduce((a,s)=>({...a,[s]:cases.filter(c=>c.status===s).length}),{});
     const pct=cases.length?Math.round((ps.Passed||0)/cases.length*100):0;
-    return`<div style="background:#fff;border-radius:8px;border:1px solid #dde1e7;padding:16px">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start"><div style="font-weight:700;color:#1e2a3a;font-size:15px">📋 ${esc(plan.name)}</div><div style="display:flex;gap:6px;align-items:center"><span style="font-size:11px;color:#888">${plan.createdAt||''}</span><button onclick="openPlanModal(${plan.id})" style="background:none;border:none;font-size:13px;cursor:pointer" title="Edit plan">✏️</button><button onclick="deletePlan(${plan.id})" style="background:none;border:none;font-size:13px;cursor:pointer;color:#c0392b" title="Delete plan">🗑️</button></div></div>
-      <div style="color:#666;font-size:12px;margin-top:4px">${esc(plan.description||'')}</div>
-      <div style="margin-top:12px"><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px"><span>Progress (${cases.length} cases)</span><span style="font-weight:700;color:${pct===100?'#1e7e34':'#1a73e8'}">${pct}%</span></div><div class="progress-bar"><div class="progress-fill" style="width:${pct}%;background:${pct===100?'#27ae60':'#1a73e8'}"></div></div></div>
-      <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">${STATUSES.filter(s=>ps[s]>0).map(s=>`<span class="badge" style="background:${SC[s].bg};color:${SC[s].text};border:1px solid ${SC[s].border}">${ps[s]} ${s}</span>`).join('')}</div>
+    return`<div class="plan-card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
+        <div style="font-weight:700;color:var(--text);font-size:15px">📋 ${esc(plan.name)}</div>
+        <div style="display:flex;gap:2px;align-items:center">
+          <span style="font-size:11px;color:var(--text3);margin-right:6px">${plan.createdAt||''}</span>
+          <button class="suite-icon-btn" onclick="openPlanModal(${plan.id})" title="Edit plan">✏️</button>
+          <button class="suite-icon-btn" onclick="deletePlan(${plan.id})" title="Delete plan" style="color:var(--red)">🗑️</button>
+        </div>
+      </div>
+      <div style="color:var(--text2);font-size:12px;margin-bottom:12px">${esc(plan.description||'')}</div>
+      <div style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:5px"><span style="color:var(--text2)">Progress (${cases.length} cases)</span><span style="font-weight:700;color:${pct===100?'var(--green)':'var(--blue)'}">${pct}%</span></div><div class="progress-bar"><div class="progress-fill" style="width:${pct}%;background:${pct===100?'var(--green)':'var(--blue)'}"></div></div></div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">${STATUSES.filter(s=>ps[s]>0).map(s=>`<span class="badge" style="background:${SC[s].bg};color:${SC[s].text};border:1px solid ${SC[s].border}">${ps[s]} ${s}</span>`).join('')}</div>
     </div>`;
   }).join('');
 }
 function renderOverview(){
   const all=suites.flatMap(s=>s.cases);
   const gs=STATUSES.reduce((a,s)=>({...a,[s]:all.filter(c=>c.status===s).length}),{});
-  document.getElementById('overview-stats').innerHTML=[['Total Cases',all.length,'#1a73e8'],['Test Runs',runs.length,'#8e44ad'],...STATUSES.map(s=>[s,gs[s],SC[s].text])].map(([l,v,c])=>`<div style="background:#fff;border-radius:8px;border:1px solid #dde1e7;padding:14px 22px;min-width:100px;text-align:center"><div style="font-size:26px;font-weight:800;color:${c}">${v}</div><div style="font-size:11px;color:#666;margin-top:2px">${l}</div></div>`).join('');
-  document.getElementById('overview-suites').innerHTML=suites.map(s=>{const p=s.cases.filter(c=>c.status==='Passed').length;const pct=s.cases.length?Math.round(p/s.cases.length*100):0;return`<div style="background:#fff;border-radius:8px;border:1px solid #dde1e7;padding:16px"><div style="font-weight:700;color:#1e2a3a;margin-bottom:6px">📁 ${esc(s.name)}</div><div style="font-size:12px;color:#666;margin-bottom:8px">${s.cases.length} cases · ${p} passed</div><div class="progress-bar"><div class="progress-fill" style="width:${pct}%;background:#27ae60"></div></div><div style="font-size:11px;color:#888;margin-top:4px;text-align:right">${pct}% passed</div></div>`;}).join('');
+  document.getElementById('overview-stats').innerHTML=[
+    ['Total Cases',all.length,'var(--blue)'],
+    ['Test Suites',suites.length,'var(--cyan)'],
+    ['Test Plans',plans.length,'var(--purple)'],
+    ['Test Runs',runs.length,'var(--amber)'],
+    ...STATUSES.map(s=>[s,gs[s],SC[s].text])
+  ].map(([l,v,c])=>`<div class="stat-card"><div style="font-size:28px;font-weight:800;color:${c}">${v}</div><div style="font-size:11px;color:var(--text2);margin-top:4px;font-weight:500">${l}</div></div>`).join('');
+  document.getElementById('overview-suites').innerHTML=suites.map(s=>{
+    const p=s.cases.filter(c=>c.status==='Passed').length;
+    const pct=s.cases.length?Math.round(p/s.cases.length*100):0;
+    return`<div class="plan-card"><div style="font-weight:700;color:var(--text);margin-bottom:6px;font-size:14px">📁 ${esc(s.name)}</div><div style="font-size:12px;color:var(--text2);margin-bottom:10px">${s.cases.length} case${s.cases.length!==1?'s':''} · ${p} passed</div><div class="progress-bar"><div class="progress-fill" style="width:${pct}%;background:var(--green)"></div></div><div style="font-size:11px;color:var(--text2);margin-top:6px;text-align:right;font-weight:600">${pct}% passed</div></div>`;
+  }).join('');
 }
 
 // ══════════════════════════════════════════════════════════
@@ -1216,9 +1308,9 @@ function priDot(p){return`<span style="display:inline-flex;align-items:center;ga
 function toast(msg,type='success'){
   const t=document.getElementById('toast');
   t.textContent=msg;t.style.display='block';
-  t.style.background=type==='error'?'#fdecea':type==='info'?'#fff8e1':'#e6f4ea';
-  t.style.color=type==='error'?'#c0392b':type==='info'?'#856404':'#1e7e34';
-  t.style.border=`1px solid ${type==='error'?'#f5c6c2':type==='info'?'#ffc107':'#a8d5b5'}`;
+  t.style.background=type==='error'?'var(--red-l)':type==='info'?'#fefce8':'var(--green-l)';
+  t.style.color=type==='error'?'var(--red)':type==='info'?'#78350f':'var(--green)';
+  t.style.border=`1px solid ${type==='error'?'#fca5a5':type==='info'?'#fde68a':'#86efac'}`;
   setTimeout(()=>t.style.display='none',4000);
 }
 </script>
