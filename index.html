@@ -1123,7 +1123,8 @@ function processAttachmentFiles(caseId,files){
         })
         .withFailureHandler(function(e){
           uploadsInProgress--;
-          toast('❌ Upload failed: '+e.message,'error');
+          const msg=e&&e.message?e.message:(typeof e==='string'?e:'Unknown error – check Drive permissions');
+          toast('❌ Upload failed: '+msg,'error');
           if(--pending===0)_finishUpload(caseId,c,files.length);
         })
         .uploadAttachment(b64,file.name,file.type||'application/octet-stream');
