@@ -273,7 +273,7 @@ if(!IS_GAS){
       const dataUrl='data:'+mime+';base64,'+b64;
       _files[id]=dataUrl;
       try{window.storage.set('att_'+id,dataUrl).catch(()=>{});}catch(e){}
-      const sh=this._sh;setTimeout(()=>sh&&sh(JSON.stringify({fileId:id,viewUrl:null,fileName:name})),60);
+      const sh=this._sh;setTimeout(()=>sh&&sh({fileId:id,viewUrl:null,fileName:name}),60);
     },
     deleteAttachment(id){
       delete _files[id];
@@ -1115,8 +1115,7 @@ function processAttachmentFiles(caseId,files){
     reader.onload=ev=>{
       const b64=ev.target.result.split(',')[1];
       google.script.run
-        .withSuccessHandler(function(rj){
-          const r=JSON.parse(rj);
+        .withSuccessHandler(function(r){
           c.attachments.push({id:freshId(),name:file.name,type:file.type||'application/octet-stream',size:file.size,fileId:r.fileId,viewUrl:r.viewUrl,uploadedAt:new Date().toISOString().slice(0,10)});
           uploadsInProgress--;
           if(--pending===0)_finishUpload(caseId,c,files.length);
@@ -1138,7 +1137,9 @@ function _finishUpload(caseId,c,count){
   _updateSaveBtnForUpload();
   const list=document.getElementById('att-list');if(list)list.innerHTML=renderAttachmentsHtml(caseId,c);
   renderDetailPanel();
-  toast(`📎 ${count} file${count>1?'s':''} attached! Click 💾 Save to Sheets.`,'info');
+  renderCases();
+  toast(`📎 ${count} file${count>1?'s':''} uploaded — saving…`,'info');
+  saveNow();
 }
 function removeAttachment(caseId,attId){
   const found=findCaseById(caseId);if(!found)return;

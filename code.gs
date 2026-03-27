@@ -154,12 +154,12 @@ function uploadAttachment(base64Data, fileName, mimeType) {
   var folder = _getOrCreateFolder("TestTrack Attachments");
   var blob = Utilities.newBlob(Utilities.base64Decode(base64Data), mimeType || "application/octet-stream", fileName);
   var file = folder.createFile(blob);
-  file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-  return JSON.stringify({
+  try { file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW); } catch(e) {}
+  return {
     fileId:   file.getId(),
     viewUrl:  "https://drive.google.com/file/d/" + file.getId() + "/view",
     fileName: file.getName()
-  });
+  };
 }
 
 function deleteAttachment(fileId) {
