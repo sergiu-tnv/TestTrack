@@ -1103,31 +1103,25 @@ function renderAttachmentsHtml(caseId,c){
 function handleAttachmentUpload(e){processAttachmentFiles(attachmentTargetCaseId,[...e.target.files]);e.target.value='';}
 function handleAttachmentDrop(e){e.preventDefault();e.currentTarget.classList.remove('dz-over');processAttachmentFiles(attachmentTargetCaseId,[...e.dataTransfer.files]);}
 function processAttachmentFiles(caseId,files){
-  console.log('[TT] processAttachmentFiles caseId='+caseId+' files='+files.length);
-  if(!files.length||caseId==null){console.warn('[TT] aborted: no files or caseId null');return;}
-  const found=findCaseById(caseId);
-  if(!found){console.warn('[TT] aborted: case not found for id='+caseId);return;}
+  if(!files.length||caseId==null)return;
+  const found=findCaseById(caseId);if(!found)return;
   const{c}=found;if(!c.attachments)c.attachments=[];
   const prog=document.getElementById('att-upload-progress');if(prog)prog.classList.add('visible');
   uploadsInProgress+=files.length;
   _updateSaveBtnForUpload();
   let pending=files.length;
   files.forEach(file=>{
-    console.log('[TT] reading file: '+file.name+' size='+file.size+' type='+file.type);
     const reader=new FileReader();
     reader.onload=ev=>{
       const b64=ev.target.result.split(',')[1];
-      console.log('[TT] base64 ready, length='+b64.length+', calling GAS uploadAttachment');
       google.script.run
         .withSuccessHandler(function(r){
-          console.log('[TT] uploadAttachment success, r='+JSON.stringify(r));
-          if(!r||!r.fileId){console.error('[TT] bad response from GAS:',r);toast('❌ Upload error: invalid server response','error');uploadsInProgress--;if(--pending===0)_finishUpload(caseId,c,files.length);return;}
+          if(!r||!r.fileId){toast('❌ Upload error: invalid server response','error');uploadsInProgress--;if(--pending===0)_finishUpload(caseId,c,files.length);return;}
           c.attachments.push({id:freshId(),name:file.name,type:file.type||'application/octet-stream',size:file.size,fileId:r.fileId,viewUrl:r.viewUrl,uploadedAt:new Date().toISOString().slice(0,10)});
           uploadsInProgress--;
           if(--pending===0)_finishUpload(caseId,c,files.length);
         })
         .withFailureHandler(function(e){
-          console.error('[TT] uploadAttachment FAILED:',e);
           uploadsInProgress--;
           const msg=e&&e.message?e.message:(typeof e==='string'?e:'Unknown error – check Drive permissions');
           toast('❌ Upload failed: '+msg,'error');
@@ -1135,8 +1129,7 @@ function processAttachmentFiles(caseId,files){
         })
         .uploadAttachment(b64,file.name,file.type||'application/octet-stream');
     };
-    reader.onerror=function(e){
-      console.error('[TT] FileReader error:',e);
+    reader.onerror=function(){
       uploadsInProgress--;
       toast('❌ Could not read file: '+file.name,'error');
       if(--pending===0)_finishUpload(caseId,c,files.length);
@@ -1145,7 +1138,6 @@ function processAttachmentFiles(caseId,files){
   });
 }
 function _finishUpload(caseId,c,count){
-  console.log('[TT] _finishUpload caseId='+caseId+' count='+count+' attachments='+JSON.stringify(c.attachments));
   const prog=document.getElementById('att-upload-progress');if(prog)prog.classList.remove('visible');
   markDirty();                   // must come BEFORE _updateSaveBtnForUpload
   _updateSaveBtnForUpload();
