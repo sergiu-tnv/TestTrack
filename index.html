@@ -78,6 +78,10 @@ th.sortable:hover{background:#e2e8f0!important}
   <div class="topbar">
     <div class="logo">🧪 TestTrack</div>
     <div style="flex:1"></div>
+    <div style="position:relative" id="global-search-wrap">
+      <input id="global-search-input" placeholder="🔍 Search all cases…" oninput="globalSearch(this.value)" style="border:1px solid #3a4d63;background:#253347;color:#fff;border-radius:5px;padding:5px 12px;font-size:12px;width:200px;outline:none" onfocus="if(this.value)globalSearch(this.value)"/>
+      <div id="global-search-results" style="display:none;position:absolute;top:34px;right:0;background:#fff;border-radius:6px;border:1px solid #dde1e7;box-shadow:0 4px 20px rgba(0,0,0,.15);min-width:380px;max-height:320px;overflow-y:auto;z-index:500"></div>
+    </div>
     <button id="save-btn" class="idle" onclick="saveNow()" title="Save all changes to Google Sheets">
       <span id="save-icon">💾</span>
       <span id="save-label">Saved</span>
@@ -85,8 +89,8 @@ th.sortable:hover{background:#e2e8f0!important}
     <span style="font-size:12px;color:#adb5bd">Backend: <b style="color:#fff">Google Sheets</b></span>
   </div>
   <div id="dirty-banner" style="display:none;background:#fef3c7;border-bottom:2px solid #f59e0b;padding:7px 20px;font-size:12px;color:#92400e;align-items:center;gap:10px">
-    ⚠️ <b>Ai modificări nesalvate.</b> Apasă <b>💾 Save to Sheets</b> înainte să dai refresh.
-    <button onclick="saveNow()" style="background:#f59e0b;color:#fff;border:none;border-radius:4px;padding:3px 10px;font-weight:700;cursor:pointer;font-size:12px">Salvează acum</button>
+    ⚠️ <b>You have unsaved changes.</b> Click <b>💾 Save to Sheets</b> before refreshing.
+    <button onclick="saveNow()" style="background:#f59e0b;color:#fff;border:none;border-radius:4px;padding:3px 10px;font-weight:700;cursor:pointer;font-size:12px">Save now</button>
   </div>
   <div class="tabs" id="tab-bar">
     <button class="tab active" onclick="switchTab('suites')">📁 Suites &amp; Cases</button>
@@ -145,6 +149,7 @@ th.sortable:hover{background:#e2e8f0!important}
 </div>
 <input type="file" id="import-input" accept=".csv" style="display:none" onchange="handleImport(event)"/>
 <input type="file" id="attachment-input" multiple style="display:none" onchange="handleAttachmentUpload(event)"/>
+<datalist id="assignees-list"></datalist>
 
 <script>
 // ══════════════════════════════════════════════════════════
@@ -244,11 +249,12 @@ let filterSt='All',searchVal='';
 let runFormState={name:'',description:'',suiteId:null,mode:'all',pickedIds:new Set(),randomCount:5};
 let runDetailSelCase=null;
 let sortField='id',sortDir='asc';
+let runSortField=null,runSortDir='asc';
 let attachmentTargetCaseId=null;
 let isModalOpen=false,isSaving=false,isDirty=false,uploadsInProgress=0;
 
 window.addEventListener('beforeunload',function(e){
-  if(isDirty||isSaving){const m='Ai modificări nesalvate!';e.preventDefault();e.returnValue=m;return m;}
+  if(isDirty||isSaving){const m='You have unsaved changes!';e.preventDefault();e.returnValue=m;return m;}
 });
 
 // ══════════════════════════════════════════════════════════
@@ -314,7 +320,7 @@ function _updateSaveBtnForUpload(){
 // ══════════════════════════════════════════════════════════
 function saveNow(){
   if(isSaving)return;
-  if(uploadsInProgress>0){toast('⏳ Upload în curs, așteaptă…','info');return;}
+  if(uploadsInProgress>0){toast('⏳ Upload in progress, please wait…','info');return;}
   if(!isDirty){toast('✓ Already saved','info');return;}
   isSaving=true; markSaving();
   const sj=JSON.stringify(suites),pj=JSON.stringify(plans),rj=JSON.stringify(runs);
@@ -345,27 +351,24 @@ function saveNow(){
 // ══════════════════════════════════════════════════════════
 //  INIT
 // ══════════════════════════════════════════════════════════
+// Wraps a GAS call as a Promise so all three data fetches run in parallel
+function _gasPromise(fn){return new Promise(function(resolve,reject){google.script.run.withSuccessHandler(resolve).withFailureHandler(reject)[fn]();});}
 window.onload = async function(){
   if(!IS_GAS) window._db = await storageLoad();
-  google.script.run.withSuccessHandler(function(sj){
-    suites=JSON.parse(sj);
-    google.script.run.withSuccessHandler(function(pj){
-      plans=JSON.parse(pj);
-      google.script.run.withSuccessHandler(function(rj){
-        runs=JSON.parse(rj);
-        const ids=[
-          ...suites.flatMap(s=>[Number(s.id),...s.cases.map(c=>Number(c.id))]),
-          ...plans.map(p=>Number(p.id)),
-          ...runs.flatMap(r=>[Number(r.id),...(r.cases||[]).map(c=>Number(c.id))])
-        ];
-        if(ids.length) nextId=Math.max(nextId,...ids)+1;
-        document.getElementById('loading').style.display='none';
-        switchTab('suites');
-        if(suites.length){selSuiteId=suites[0].id;renderAll();}
-        updateRunsBadge();markSaved();
-      }).withFailureHandler(e=>{document.getElementById('loading').style.display='none';toast('❌ '+e.message,'error');}).getRuns();
-    }).withFailureHandler(e=>{document.getElementById('loading').style.display='none';toast('❌ '+e.message,'error');}).getPlans();
-  }).withFailureHandler(e=>{document.getElementById('loading').style.display='none';toast('❌ '+e.message,'error');}).getSuites();
+  try{
+    const [sj,pj,rj]=await Promise.all([_gasPromise('getSuites'),_gasPromise('getPlans'),_gasPromise('getRuns')]);
+    suites=JSON.parse(sj);plans=JSON.parse(pj);runs=JSON.parse(rj);
+    const ids=[
+      ...suites.flatMap(s=>[Number(s.id),...s.cases.map(c=>Number(c.id))]),
+      ...plans.map(p=>Number(p.id)),
+      ...runs.flatMap(r=>[Number(r.id),...(r.cases||[]).map(c=>Number(c.id))])
+    ];
+    if(ids.length) nextId=Math.max(nextId,...ids)+1;
+    document.getElementById('loading').style.display='none';
+    switchTab('suites');
+    if(suites.length){selSuiteId=suites[0].id;renderAll();}
+    updateRunsBadge();markSaved();
+  }catch(e){document.getElementById('loading').style.display='none';toast('❌ '+(e.message||e),'error');}
 };
 
 // ══════════════════════════════════════════════════════════
@@ -383,6 +386,7 @@ function switchTab(t){
 }
 function openModal(html){document.getElementById('modal-content').innerHTML=html;document.getElementById('modal-bg').style.display='flex';isModalOpen=true;}
 function closeModal(){document.getElementById('modal-bg').style.display='none';document.getElementById('modal-content').innerHTML='';isModalOpen=false;}
+document.addEventListener('keydown',function(e){if(e.key==='Escape'&&isModalOpen)closeModal();});
 
 // ══════════════════════════════════════════════════════════
 //  RENDER – SIDEBAR / CASES
@@ -642,7 +646,7 @@ function renderRunsList(){
       </div>`;
     }).join('')}</div>`;
 }
-function openRunDetail(id){activeRunId=id;runSelIds=new Set();runDetailSelCase=null;renderRunDetail();}
+function openRunDetail(id){activeRunId=id;runSelIds=new Set();runDetailSelCase=null;runSortField=null;runSortDir='asc';renderRunDetail();}
 function renderRunDetail(){
   document.getElementById('runs-list-view').style.display='none';
   document.getElementById('run-detail-view').style.display='block';
@@ -654,6 +658,7 @@ function renderRunDetail(){
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap">
       <button class="btn btn-secondary" onclick="backToRuns()">← All Runs</button>
       <div style="flex:1"><h2 style="color:#1e2a3a;margin:0">🚀 ${esc(run.name)}</h2><span style="font-size:12px;color:#888">📁 ${esc(run.suiteName)} · ${run.createdAt} · ${run.cases.length} cases</span></div>
+      <button class="btn btn-info" onclick="openAddCasesToRunModal(${run.id})">+ Add Cases</button>
       <button class="btn btn-danger" onclick="deleteRun(${run.id})">🗑️ Delete Run</button>
     </div>
     <div style="background:#fff;border-radius:8px;border:1px solid #dde1e7;padding:16px;margin-bottom:16px;display:flex;gap:20px;align-items:center;flex-wrap:wrap">
@@ -677,10 +682,10 @@ function renderRunDetail(){
       <table>
         <thead><tr style="background:#f8f9fa;border-bottom:2px solid #dde1e7">
           <th style="padding:9px 12px;width:36px"><input type="checkbox" ${allChecked?'checked':''} onchange="toggleAllRun(${run.id},this.checked)"/></th>
-          <th>ID</th><th>Title</th><th>Type</th><th>Priority</th><th>Run Status</th><th>Assigned To</th><th>Steps</th>
+          ${runSTh('ID','id')}${runSTh('Title','title')}${runSTh('Type','type')}${runSTh('Priority','priority')}${runSTh('Status','status')}${runSTh('Assigned To','assignedTo')}<th>Steps</th>
         </tr></thead>
         <tbody>
-          ${run.cases.map((c,i)=>`
+          ${sortRunCases(run.cases).map((c,i)=>`
             <tr class="${runSelIds.has(c.id)?'sel-row':i%2===0?'even':'odd'}">
               <td style="padding:7px 12px" onclick="toggleRunCase(${c.id})"><input type="checkbox" ${runSelIds.has(c.id)?'checked':''}/></td>
               <td style="font-size:10px;color:#888">TC-${c.originalId}</td>
@@ -765,7 +770,7 @@ function renderPlans(){
     const ps=STATUSES.reduce((a,s)=>({...a,[s]:cases.filter(c=>c.status===s).length}),{});
     const pct=cases.length?Math.round((ps.Passed||0)/cases.length*100):0;
     return`<div style="background:#fff;border-radius:8px;border:1px solid #dde1e7;padding:16px">
-      <div style="display:flex;justify-content:space-between"><div style="font-weight:700;color:#1e2a3a;font-size:15px">📋 ${esc(plan.name)}</div><span style="font-size:11px;color:#888">${plan.createdAt||''}</span></div>
+      <div style="display:flex;justify-content:space-between;align-items:flex-start"><div style="font-weight:700;color:#1e2a3a;font-size:15px">📋 ${esc(plan.name)}</div><div style="display:flex;gap:6px;align-items:center"><span style="font-size:11px;color:#888">${plan.createdAt||''}</span><button onclick="openPlanModal(${plan.id})" style="background:none;border:none;font-size:13px;cursor:pointer" title="Edit plan">✏️</button><button onclick="deletePlan(${plan.id})" style="background:none;border:none;font-size:13px;cursor:pointer;color:#c0392b" title="Delete plan">🗑️</button></div></div>
       <div style="color:#666;font-size:12px;margin-top:4px">${esc(plan.description||'')}</div>
       <div style="margin-top:12px"><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px"><span>Progress (${cases.length} cases)</span><span style="font-weight:700;color:${pct===100?'#1e7e34':'#1a73e8'}">${pct}%</span></div><div class="progress-bar"><div class="progress-fill" style="width:${pct}%;background:${pct===100?'#27ae60':'#1a73e8'}"></div></div></div>
       <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">${STATUSES.filter(s=>ps[s]>0).map(s=>`<span class="badge" style="background:${SC[s].bg};color:${SC[s].text};border:1px solid ${SC[s].border}">${ps[s]} ${s}</span>`).join('')}</div>
@@ -859,6 +864,7 @@ function saveSuiteForm(id){
   closeModal();markDirty();renderAll();
 }
 function openCaseModal(id){
+  _refreshAssigneeList();
   const suite=suites.find(s=>s.id===selSuiteId);if(!suite)return;
   const cid=(id!=null&&id!=='null')?Number(id):null;
   const c=cid!=null?suite.cases.find(x=>x.id===cid):{};
@@ -866,7 +872,7 @@ function openCaseModal(id){
   openModal(`<h3 style="margin:0 0 16px;color:#1e2a3a">${cid!=null?'Edit Test Case':'New Test Case'}</h3>
     <div style="margin-bottom:12px"><label class="form-label">Title *</label><input id="m-ctitle" class="form-input" value="${esc(c.title||'')}"/>
     <div id="m-ctitle-err" class="field-error">⚠️ A test case with this title already exists in this suite.</div></div>
-    <div style="margin-bottom:12px"><label class="form-label">Assigned To</label><input id="m-cassigned" class="form-input" value="${esc(c.assignedTo||'')}"/></div>
+    <div style="margin-bottom:12px"><label class="form-label">Assigned To</label><input id="m-cassigned" class="form-input" value="${esc(c.assignedTo||'')}" list="assignees-list" autocomplete="off"/></div>
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-bottom:12px">
       ${[['Type','m-ctype',TYPES,c.type||'Functional'],['Priority','m-cpri',PRIORITIES,c.priority||'Medium'],['Status','m-cst',STATUSES,c.status||'Untested'],['Automation','m-cauto',['Manual','Automated','Planned'],c.automationStatus||'Manual']].map(([l,fid,opts,val])=>`<div><label class="form-label" style="font-size:11px">${l}</label><select id="${fid}" class="form-input" style="padding:6px">${opts.map(o=>`<option ${o===val?'selected':''}>${o}</option>`).join('')}</select></div>`).join('')}
     </div>
@@ -888,23 +894,31 @@ function saveCaseForm(id){
   else suite.cases.push({id:freshId(),suiteId:selSuiteId,...obj,attachments:[]});
   closeModal();markDirty();renderCases();renderSidebar();
 }
-function openPlanModal(){
-  openModal(`<h3 style="margin:0 0 16px;color:#1e2a3a">New Test Plan</h3>
-    <div style="margin-bottom:12px"><label class="form-label">Name *</label><input id="m-pname" class="form-input"/></div>
-    <div style="margin-bottom:12px"><label class="form-label">Description</label><input id="m-pdesc" class="form-input"/></div>
+function openPlanModal(id){
+  const p=id?plans.find(x=>x.id===id):{};
+  openModal(`<h3 style="margin:0 0 16px;color:#1e2a3a">${id?'Edit Test Plan':'New Test Plan'}</h3>
+    <div style="margin-bottom:12px"><label class="form-label">Name *</label><input id="m-pname" class="form-input" value="${esc(p.name||'')}"/></div>
+    <div style="margin-bottom:12px"><label class="form-label">Description</label><input id="m-pdesc" class="form-input" value="${esc(p.description||'')}"/></div>
     <div style="margin-bottom:20px"><label class="form-label">Include Suites</label>
-      ${suites.map(s=>`<label style="display:flex;align-items:center;gap:8px;margin-bottom:6px;cursor:pointer"><input type="checkbox" value="${s.id}" class="plan-suite-cb"/><span style="font-size:13px">📁 ${esc(s.name)} (${s.cases.length} cases)</span></label>`).join('')}
+      ${suites.map(s=>`<label style="display:flex;align-items:center;gap:8px;margin-bottom:6px;cursor:pointer"><input type="checkbox" value="${s.id}" class="plan-suite-cb" ${(p.selectedSuites||[]).includes(s.id)?'checked':''}/><span style="font-size:13px">📁 ${esc(s.name)} (${s.cases.length} cases)</span></label>`).join('')}
     </div>
     <div style="display:flex;gap:10px;justify-content:flex-end">
       <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
-      <button class="btn btn-primary" onclick="savePlanForm()">Create Plan</button>
+      <button class="btn btn-primary" onclick="savePlanForm(${id||'null'})">${id?'Save Changes':'Create Plan'}</button>
     </div>`);
 }
-function savePlanForm(){
+function savePlanForm(id){
   const name=document.getElementById('m-pname').value.trim();if(!name)return;
-  plans.push({id:freshId(),name,description:document.getElementById('m-pdesc').value,createdAt:new Date().toISOString().slice(0,10),selectedSuites:[...document.querySelectorAll('.plan-suite-cb:checked')].map(el=>Number(el.value))});
+  const selectedSuites=[...document.querySelectorAll('.plan-suite-cb:checked')].map(el=>Number(el.value));
+  if(id&&id!=='null'){
+    const p=plans.find(x=>String(x.id)===String(id));
+    if(p){p.name=name;p.description=document.getElementById('m-pdesc').value;p.selectedSuites=selectedSuites;}
+  }else{
+    plans.push({id:freshId(),name,description:document.getElementById('m-pdesc').value,createdAt:new Date().toISOString().slice(0,10),selectedSuites});
+  }
   closeModal();markDirty();renderPlans();
 }
+function deletePlan(id){if(!confirm('Delete this test plan?'))return;plans=plans.filter(p=>p.id!==id);markDirty();renderPlans();}
 
 // ══════════════════════════════════════════════════════════
 //  MODALS – RUN
@@ -1031,7 +1045,7 @@ function _finishUpload(caseId,c,count){
   _updateSaveBtnForUpload();
   const list=document.getElementById('att-list');if(list)list.innerHTML=renderAttachmentsHtml(caseId,c);
   renderDetailPanel();
-  toast(`📎 ${count} file${count>1?'s':''} attached! Apasă 💾 Save to Sheets.`,'info');
+  toast(`📎 ${count} file${count>1?'s':''} attached! Click 💾 Save to Sheets.`,'info');
 }
 function removeAttachment(caseId,attId){
   const found=findCaseById(caseId);if(!found)return;
@@ -1089,10 +1103,10 @@ function handleImport(e){
       existingTitles.add(o.title.toLowerCase());
       return{id:freshId(),suiteId:selSuiteId,title:o.title,type:o.type||'Functional',priority:o.priority||'Medium',status:STATUSES.includes(o.status)?o.status:'Untested',assignedTo:o.assignedTo||'',automationStatus:o.automationStatus||'Manual',steps:o.steps||'',expected:o.expected||'',attachments:[]};
     }).filter(Boolean);
-    if(!cases.length){toast(`Import: 0 cazuri noi (${skipped} duplicate${skipped!==1?'s':''} sărite).`,'info');e.target.value='';return;}
+    if(!cases.length){toast(`Import: 0 new cases (${skipped} duplicate${skipped!==1?'s':''} skipped).`,'info');e.target.value='';return;}
     suite.cases.push(...cases);
     markDirty();renderCases();renderSidebar();
-    const msg=skipped>0?`Importat ${cases.length} cazuri (${skipped} duplicate sărite). Apasă 💾 Save.`:`Importat ${cases.length} cazuri. Apasă 💾 Save to Sheets.`;
+    const msg=skipped>0?`Imported ${cases.length} cases (${skipped} duplicates skipped). Click 💾 Save.`:`Imported ${cases.length} cases. Click 💾 Save to Sheets.`;
     toast(msg,'info');
   };
   reader.readAsText(file);e.target.value='';
@@ -1101,6 +1115,102 @@ function handleImport(e){
 // ══════════════════════════════════════════════════════════
 //  UTILS
 // ══════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════
+//  GLOBAL SEARCH
+// ══════════════════════════════════════════════════════════
+function globalSearch(q){
+  const rs=document.getElementById('global-search-results');
+  if(!q.trim()){rs.style.display='none';return;}
+  const low=q.toLowerCase();
+  const results=[];
+  suites.forEach(s=>{s.cases.filter(c=>c.title.toLowerCase().includes(low)||(c.steps||'').toLowerCase().includes(low)||(c.expected||'').toLowerCase().includes(low)).forEach(c=>results.push({suite:s,c}));});
+  if(!results.length){rs.innerHTML='<div style="padding:16px;text-align:center;color:#aaa;font-size:12px">No results found</div>';rs.style.display='block';return;}
+  rs.innerHTML=results.slice(0,20).map(({suite,c})=>`
+    <div onclick="globalSearchGo(${suite.id},${c.id})" style="padding:10px 14px;cursor:pointer;border-bottom:1px solid #f0f0f0;transition:background .1s" onmouseover="this.style.background='#f0f4ff'" onmouseout="this.style.background=''">
+      <div style="font-size:13px;font-weight:600;color:#1e2a3a">${esc(c.title)}</div>
+      <div style="font-size:11px;color:#888;margin-top:2px">📁 ${esc(suite.name)} · ${priDot(c.priority)} · <span style="color:${SC[c.status]?.text||'#666'}">${c.status}</span></div>
+    </div>`).join('')+(results.length>20?`<div style="padding:8px 14px;font-size:11px;color:#888;text-align:center">+${results.length-20} more results</div>`:'');
+  rs.style.display='block';
+}
+function globalSearchGo(suiteId,caseId){
+  document.getElementById('global-search-input').value='';
+  document.getElementById('global-search-results').style.display='none';
+  switchTab('suites');
+  selSuiteId=suiteId;selCaseId=caseId;filterSt='All';searchVal='';
+  renderAll();renderDetailPanel();
+}
+document.addEventListener('click',function(e){
+  const wrap=document.getElementById('global-search-wrap');
+  if(wrap&&!wrap.contains(e.target))document.getElementById('global-search-results').style.display='none';
+});
+
+// ══════════════════════════════════════════════════════════
+//  RUN DETAIL SORTING
+// ══════════════════════════════════════════════════════════
+function runSTh(label,field){
+  const a=runSortField===field,arrow=a?(runSortDir==='asc'?'▲':'▼'):'';
+  return`<th class="sortable" onclick="toggleRunSort('${field}')">${label}${a?`<span class="sort-arrow">${arrow}</span>`:''}</th>`;
+}
+function toggleRunSort(field){if(runSortField===field)runSortDir=runSortDir==='asc'?'desc':'asc';else{runSortField=field;runSortDir='asc';}renderRunDetail();}
+function sortRunCases(arr){
+  if(!runSortField)return arr;
+  return[...arr].sort((a,b)=>{
+    let va,vb;
+    if(runSortField==='priority'){va=PRIORITY_ORDER[a.priority]??99;vb=PRIORITY_ORDER[b.priority]??99;}
+    else if(runSortField==='status'){va=STATUS_ORDER[a.status]??99;vb=STATUS_ORDER[b.status]??99;}
+    else{va=a[runSortField]??'';vb=b[runSortField]??'';}
+    if(typeof va==='number'&&typeof vb==='number')return runSortDir==='asc'?va-vb:vb-va;
+    const c=String(va).localeCompare(String(vb));return runSortDir==='asc'?c:-c;
+  });
+}
+
+// ══════════════════════════════════════════════════════════
+//  ADD CASES TO EXISTING RUN
+// ══════════════════════════════════════════════════════════
+function openAddCasesToRunModal(runId){
+  const run=runs.find(r=>r.id===runId);if(!run)return;
+  const suite=suites.find(s=>s.id===run.suiteId);
+  if(!suite){toast('Source suite no longer exists.','info');return;}
+  const existingOrigIds=new Set(run.cases.map(c=>c.originalId));
+  const available=suite.cases.filter(c=>!existingOrigIds.has(c.id));
+  if(!available.length){toast('All cases from this suite are already in the run.','info');return;}
+  openModal(`<h3 style="margin:0 0 16px;color:#1e2a3a">+ Add Cases to Run</h3>
+    <div style="font-size:12px;color:#888;margin-bottom:14px;padding:8px 12px;background:#f8f9fa;border-radius:6px"><b style="color:#1e2a3a">🚀 ${esc(run.name)}</b> · from 📁 ${esc(suite.name)}</div>
+    <div style="border:1px solid #dde1e7;border-radius:8px;overflow:hidden;max-height:320px;overflow-y:auto">
+      <div style="background:#f8f9fa;padding:8px 14px;border-bottom:1px solid #dde1e7;display:flex;justify-content:space-between;align-items:center">
+        <span style="font-size:12px;font-weight:700">Available cases (${available.length})</span>
+        <div style="display:flex;gap:10px">
+          <button onclick="document.querySelectorAll('.add-run-cb').forEach(cb=>cb.checked=true)" style="background:none;border:none;cursor:pointer;font-size:11px;color:#1a73e8;font-weight:600">Select All</button>
+          <button onclick="document.querySelectorAll('.add-run-cb').forEach(cb=>cb.checked=false)" style="background:none;border:none;cursor:pointer;font-size:11px;color:#888">Clear</button>
+        </div>
+      </div>
+      ${available.map(c=>`<label class="case-picker-row"><input type="checkbox" value="${c.id}" class="add-run-cb" style="cursor:pointer;width:16px;height:16px"/><div style="flex:1;min-width:0"><div style="font-size:13px;color:#1e2a3a">${esc(c.title)}</div><div style="font-size:10px;color:${PC[c.priority]||'#888'};font-weight:600;margin-top:2px">${c.priority} · ${c.type}</div></div><span class="badge" style="background:${SC[c.status]?.bg||'#f1f3f5'};color:${SC[c.status]?.text||'#555'};border:1px solid ${SC[c.status]?.border||'#dde1e7'};font-size:10px">${c.status}</span></label>`).join('')}
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px">
+      <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="addCasesToRun(${runId})">+ Add Selected</button>
+    </div>`);
+}
+function addCasesToRun(runId){
+  const run=runs.find(r=>r.id===runId);if(!run)return;
+  const suite=suites.find(s=>s.id===run.suiteId);if(!suite)return;
+  const pickedIds=new Set([...document.querySelectorAll('.add-run-cb:checked')].map(el=>Number(el.value)));
+  if(!pickedIds.size){toast('No cases selected.','info');return;}
+  const toAdd=suite.cases.filter(c=>pickedIds.has(c.id));
+  toAdd.forEach(c=>run.cases.push({...c,id:freshId(),originalId:c.id,status:'Untested'}));
+  closeModal();markDirty();renderRunDetail();
+  toast(`✅ Added ${toAdd.length} case${toAdd.length!==1?'s':''} to run.`);
+}
+
+// ══════════════════════════════════════════════════════════
+//  ASSIGNEE AUTOCOMPLETE
+// ══════════════════════════════════════════════════════════
+function _refreshAssigneeList(){
+  const names=[...new Set(suites.flatMap(s=>s.cases.map(c=>c.assignedTo)).filter(Boolean))].sort();
+  const dl=document.getElementById('assignees-list');
+  if(dl)dl.innerHTML=names.map(n=>`<option value="${esc(n)}">`).join('');
+}
+
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function priDot(p){return`<span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;color:${PC[p]||'#888'}"><span style="width:8px;height:8px;border-radius:50%;background:${PC[p]||'#888'};display:inline-block"></span>${p}</span>`;}
 function toast(msg,type='success'){
